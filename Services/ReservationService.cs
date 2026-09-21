@@ -1,4 +1,5 @@
 ﻿using StudyHubAPI.Models.DTOs.Reservation;
+using StudyHubAPI.Models.DTOs;
 using StudyHubAPI.Models.Entities;
 using StudyHubAPI.Models.Enums;
 using StudyHubAPI.Repositories;
@@ -27,7 +28,7 @@ namespace StudyHubAPI.Services
             return await _WorkspaceRepository.GetHourlyRate(WorkspaceID) * HourRate;
         }
 
-        public Task<List<ReservationSummaryDto>> GetAllReservation(int pageNumber,int pageSize)
+        public Task<PagedResponse<ReservationSummaryDto>> GetAllReservation(int pageNumber,int pageSize)
         {
             return _reservationRepository.GetAllReservations(pageNumber, pageSize);
         }

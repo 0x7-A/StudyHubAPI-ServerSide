@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using StudyHubAPI.Data;
+using StudyHubAPI.Models.DTOs;
 using StudyHubAPI.Models.DTOs.Admin;
 using StudyHubAPI.Models.DTOs.Reservation;
 using StudyHubAPI.Models.Entities;
@@ -45,14 +46,15 @@ namespace StudyHubAPI.Repositories
         }
 
 
-        public async Task<List<ReservationSummaryDto>> GetAllReservations(int pageNumber, int pageSize)
+        public async Task<PagedResponse<ReservationSummaryDto>> GetAllReservations(int pageNumber, int pageSize)
         {
-            int rowsToSkip = (pageNumber - 1) * pageSize;
+            var query = _context.Reservations.AsNoTracking();
 
-            return await _context.Reservations
-            .AsNoTracking()
+            int totalCount = await query.CountAsync();
+
+            var Reservations =  await query
             .OrderByDescending(r => r.StartDate)
-            .Skip(rowsToSkip)
+            .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Select(r => new ReservationSummaryDto
             {
@@ -61,6 +63,8 @@ namespace StudyHubAPI.Repositories
                 StartTime = r.StartDate,
                 ReservationStatus = r.ReservationStatus
             }).ToListAsync();
+
+            return new PagedResponse<ReservationSummaryDto>(Reservations, totalCount, pageNumber, pageSize);
         }
 
         public async Task<List<ReservationSummaryDto>> GetAllReservationsByCustomerID(int CustomerID)

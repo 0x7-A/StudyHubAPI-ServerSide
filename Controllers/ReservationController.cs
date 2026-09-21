@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using StudyHubAPI.Models.DTOs;
 using StudyHubAPI.Models.DTOs.Reservation;
 using StudyHubAPI.Services;
 using System.Security.Claims;
@@ -46,7 +47,7 @@ namespace StudyHubAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
 
-        public async Task<ActionResult<IEnumerable<ReservationSummaryDto>>> GetAllReservation(int pageNumber = 1, int pageSize = 10)
+        public async Task<ActionResult<PagedResponse<ReservationSummaryDto>>> GetAllReservation(int pageNumber = 1, int pageSize = 10)
         {
             if (pageNumber <= 0 || pageSize <= 0)
             {
@@ -56,12 +57,12 @@ namespace StudyHubAPI.Controllers
 
             var ReservationList = await _reservationService.GetAllReservation(pageNumber,pageSize);
 
-            if (ReservationList.Count == 0)
+            if (ReservationList.TotalCount == 0)
             {
                 return NotFound("No Reservation Was Found");
             }
 
-            return Ok(ReservationList);
+            return Ok(ReservationList); 
         }
 
 
