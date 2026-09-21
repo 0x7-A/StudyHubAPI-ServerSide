@@ -6,6 +6,7 @@ using StudyHubAPI.Models.DTOs.Admin;
 using StudyHubAPI.Models.DTOs.Reservation;
 using StudyHubAPI.Models.Entities;
 using StudyHubAPI.Models.Enums;
+using StudyHubAPI.Models.Filter;
 using System.Collections.ObjectModel;
 
 namespace StudyHubAPI.Repositories
@@ -46,16 +47,27 @@ namespace StudyHubAPI.Repositories
         }
 
 
-        public async Task<PagedResponse<ReservationSummaryDto>> GetAllReservations(int pageNumber, int pageSize)
+        public async Task<PagedResponse<ReservationSummaryDto>> GetAllReservations(ReservationQueryFilter filter)
         {
             var query = _context.Reservations.AsNoTracking();
 
             int totalCount = await query.CountAsync();
 
+            if (filter.ReservationStatus.HasValue)
+            {
+                query = query.Where(r => r.ReservationStatus.Equals(filter.ReservationStatus.Value));
+            }
+
+            if (filter.StartTime.HasValue)
+            {
+                query = query.Where(r => r.StartDate >= filter.StartTime.Value);
+            }
+
+
             var Reservations =  await query
             .OrderByDescending(r => r.StartDate)
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
+            .Skip((filter.pageNumber - 1) * filter.pageSize)
+            .Take(filter.pageSize)
             .Select(r => new ReservationSummaryDto
             {
                 ReservationID = r.ReservationID,
@@ -64,7 +76,7 @@ namespace StudyHubAPI.Repositories
                 ReservationStatus = r.ReservationStatus
             }).ToListAsync();
 
-            return new PagedResponse<ReservationSummaryDto>(Reservations, totalCount, pageNumber, pageSize);
+            return new PagedResponse<ReservationSummaryDto>(Reservations, totalCount, filter.pageNumber, filter.pageSize);
         }
 
         public async Task<List<ReservationSummaryDto>> GetAllReservationsByCustomerID(int CustomerID)

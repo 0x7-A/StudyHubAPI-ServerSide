@@ -1,7 +1,9 @@
-﻿using StudyHubAPI.Models.DTOs.Reservation;
+﻿using Microsoft.AspNetCore.Mvc;
 using StudyHubAPI.Models.DTOs;
+using StudyHubAPI.Models.DTOs.Reservation;
 using StudyHubAPI.Models.Entities;
 using StudyHubAPI.Models.Enums;
+using StudyHubAPI.Models.Filter;
 using StudyHubAPI.Repositories;
 using StudyHubAPI.Utils;
 
@@ -28,9 +30,9 @@ namespace StudyHubAPI.Services
             return await _WorkspaceRepository.GetHourlyRate(WorkspaceID) * HourRate;
         }
 
-        public Task<PagedResponse<ReservationSummaryDto>> GetAllReservation(int pageNumber,int pageSize)
+        public Task<PagedResponse<ReservationSummaryDto>> GetAllReservation(ReservationQueryFilter filter)
         {
-            return _reservationRepository.GetAllReservations(pageNumber, pageSize);
+            return _reservationRepository.GetAllReservations(filter);
         }
 
 

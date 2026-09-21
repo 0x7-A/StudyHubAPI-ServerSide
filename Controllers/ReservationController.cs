@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using StudyHubAPI.Models.DTOs;
 using StudyHubAPI.Models.DTOs.Reservation;
+using StudyHubAPI.Models.Filter;
 using StudyHubAPI.Services;
 using System.Security.Claims;
 
@@ -47,15 +48,15 @@ namespace StudyHubAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
 
-        public async Task<ActionResult<PagedResponse<ReservationSummaryDto>>> GetAllReservation(int pageNumber = 1, int pageSize = 10)
+        public async Task<ActionResult<PagedResponse<ReservationSummaryDto>>> GetAllReservation([FromQuery] ReservationQueryFilter filter)
         {
-            if (pageNumber <= 0 || pageSize <= 0)
+            if (filter.pageNumber <= 0 || filter.pageSize <= 0)
             {
                 return BadRequest("page number and page size can't be zero or less");
             }
 
 
-            var ReservationList = await _reservationService.GetAllReservation(pageNumber,pageSize);
+            var ReservationList = await _reservationService.GetAllReservation(filter);
 
             if (ReservationList.TotalCount == 0)
             {
