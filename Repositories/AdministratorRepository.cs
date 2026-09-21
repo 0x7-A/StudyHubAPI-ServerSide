@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StudyHubAPI.Data;
 using StudyHubAPI.Models.DTOs.Admin;
+using StudyHubAPI.Models.DTOs;
 using StudyHubAPI.Models.Entities;
 
 namespace StudyHubAPI.Repositories
@@ -27,14 +28,16 @@ namespace StudyHubAPI.Repositories
             return await _context.Administrators.AsNoTracking().SingleOrDefaultAsync(p => p.PersonID == personID && p.IsActive);
         }
 
-        public async Task<List<AdminSummaryDto>> GetAllAdmins(int pageNumber, int pageSize)
+        public async Task<PagedResponse<AdminSummaryDto>> GetAllAdmins(int pageNumber, int pageSize)
         {
-            int rowsToSkip = (pageNumber - 1) * pageSize;
 
-            return await _context.Administrators
-                .AsNoTracking().Where(p => p.IsActive)
+            var query = _context.Administrators.AsNoTracking().Where(p => p.IsActive);
+
+            int totalCount = await query.CountAsync();
+
+            var admins = await query
                 .OrderBy(a => a.PersonID) 
-                .Skip(rowsToSkip)         
+                .Skip((pageNumber - 1) * pageSize)         
                 .Take(pageSize)           
                 .Select(a => new AdminSummaryDto 
                 {
@@ -43,6 +46,7 @@ namespace StudyHubAPI.Repositories
                     HireDate = a.HireDate
                 }).ToListAsync();
 
+            return new PagedResponse<AdminSummaryDto>(admins, totalCount, pageNumber, pageSize);
         }
 
         public async Task<int> AddAdmin(Administrators NewAdmin)

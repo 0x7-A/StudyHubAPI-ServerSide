@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StudyHubAPI.Models.DTOs.Admin;
+using StudyHubAPI.Models.DTOs;
 using StudyHubAPI.Models.Enums;
 using StudyHubAPI.Services;
 using System.Security.Claims;
@@ -76,7 +77,7 @@ namespace StudyHubAPI.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async  Task<ActionResult<IEnumerable<AdminSummaryDto>>> GetAllAdministrators(int pageNumber = 1, int pageSize = 10)
+        public async  Task<ActionResult<PagedResponse<AdminSummaryDto>>> GetAllAdministrators(int pageNumber = 1, int pageSize = 10)
         {
             if (pageNumber <= 0 || pageSize <= 0)
             {
@@ -87,7 +88,7 @@ namespace StudyHubAPI.Controllers
             var AdminsList = await _administratorService.GetAllAdmins(pageNumber, pageSize);
 
 
-            if(AdminsList.Count == 0)
+            if(AdminsList.TotalCount == 0)
             {
                 return NotFound("No Admins Found");
             }
