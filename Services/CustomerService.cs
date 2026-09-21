@@ -1,4 +1,5 @@
-﻿using StudyHubAPI.Models.DTOs.Customer;
+﻿using StudyHubAPI.Models.DTOs;
+using StudyHubAPI.Models.DTOs.Customer;
 using StudyHubAPI.Models.Entities;
 using StudyHubAPI.Models.Enums;
 using StudyHubAPI.Repositories;
@@ -59,7 +60,7 @@ namespace StudyHubAPI.Services
         }
 
 
-        public  Task<List<CustomerSummaryDto>> GetAllCustomers(int PageNumber,int PageSize)
+        public  Task<PagedResponse<CustomerSummaryDto>> GetAllCustomers(int PageNumber,int PageSize)
         {
             return _CustomerRepository.GetAllCustomer(PageNumber, PageSize);
         }

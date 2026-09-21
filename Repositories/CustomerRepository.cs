@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StudyHubAPI.Data;
+using StudyHubAPI.Models.DTOs;
 using StudyHubAPI.Models.DTOs.Customer;
 using StudyHubAPI.Models.Entities;
 
@@ -35,14 +36,16 @@ namespace StudyHubAPI.Repositories
 
 
 
-        public async Task<List<CustomerSummaryDto>> GetAllCustomer(int pageNumber, int pageSize)
+        public async Task<PagedResponse<CustomerSummaryDto>> GetAllCustomer(int pageNumber, int pageSize)
         {
-            int rowsToSkip = (pageNumber - 1) * pageSize;
+            var query = _context.Customers.AsNoTracking().Where(p => p.IsActive);
 
-            return await _context.Customers
-                .AsNoTracking().Where(p => p.IsActive)
+            int totalCount = await query.CountAsync();
+
+
+            var customers = await query
                 .OrderBy(a => a.PersonID)
-                .Skip(rowsToSkip)
+                .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .Select(a => new CustomerSummaryDto
                 {
@@ -52,6 +55,7 @@ namespace StudyHubAPI.Repositories
 
                 }).ToListAsync();
 
+            return new PagedResponse<CustomerSummaryDto>(customers, totalCount, pageNumber, pageSize);
         }
 
     }

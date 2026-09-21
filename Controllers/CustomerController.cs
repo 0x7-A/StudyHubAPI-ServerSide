@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using StudyHubAPI.Models.DTOs;
 using StudyHubAPI.Models.DTOs.Customer;
 using StudyHubAPI.Models.Enums;
 using StudyHubAPI.Services;
@@ -78,7 +79,7 @@ namespace StudyHubAPI.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<IEnumerable<CustomerSummaryDto>>> GetAllCustomers(int pageNumber = 1, int pageSize = 10)
+        public async Task<ActionResult<PagedResponse<CustomerSummaryDto>>> GetAllCustomers(int pageNumber = 1, int pageSize = 10)
         {
             if (pageNumber <= 0 || pageSize <= 0)
             {
@@ -89,7 +90,7 @@ namespace StudyHubAPI.Controllers
             var customersList = await _customerService.GetAllCustomers(pageNumber, pageSize);
 
 
-            if (customersList.Count == 0)
+            if (customersList.TotalCount == 0)
             {
                 return NotFound("No Customers Found");
             }
