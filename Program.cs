@@ -9,6 +9,7 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
+using StudyHubAPI.Models.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -155,6 +156,7 @@ builder.Services.AddScoped<ReservationRepository>();
 builder.Services.AddScoped<ReviewRepository>();
 builder.Services.AddScoped<WorkspaceRepository>();
 builder.Services.AddScoped<PaymentRepository>();
+builder.Services.AddScoped<WorkspaceImagesRepository>();
 
 
 // =========================================================
@@ -167,6 +169,7 @@ builder.Services.AddScoped<ReservationService>();
 builder.Services.AddScoped<ReviewService>();
 builder.Services.AddScoped<WorkspaceService>();
 builder.Services.AddScoped<PaymentService>();
+builder.Services.AddScoped<WorkspaceImagesService>();
 
 
 builder.Services.AddCors(options =>
