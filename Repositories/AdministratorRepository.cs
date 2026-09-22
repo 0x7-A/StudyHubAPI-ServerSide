@@ -3,6 +3,7 @@ using StudyHubAPI.Data;
 using StudyHubAPI.Models.DTOs.Admin;
 using StudyHubAPI.Models.DTOs;
 using StudyHubAPI.Models.Entities;
+using StudyHubAPI.Models.Filter;
 
 namespace StudyHubAPI.Repositories
 {
@@ -28,17 +29,27 @@ namespace StudyHubAPI.Repositories
             return await _context.Administrators.AsNoTracking().SingleOrDefaultAsync(p => p.PersonID == personID && p.IsActive);
         }
 
-        public async Task<PagedResponse<AdminSummaryDto>> GetAllAdmins(int pageNumber, int pageSize)
+        public async Task<PagedResponse<AdminSummaryDto>> GetAllAdmins(AdminQueryFilter filter)
         {
 
             var query = _context.Administrators.AsNoTracking().Where(p => p.IsActive);
+
+            if(!string.IsNullOrEmpty(filter.FullName))
+            {
+                query = query.Where(a => (a.FirstName + " " + a.LastName).Contains(filter.FullName));
+            }  
+
+            if(filter.HireDate != null)
+            {
+                query = query.Where(a => a.HireDate >= filter.HireDate.Value);
+            }   
 
             int totalCount = await query.CountAsync();
 
             var admins = await query
                 .OrderBy(a => a.PersonID) 
-                .Skip((pageNumber - 1) * pageSize)         
-                .Take(pageSize)           
+                .Skip((filter.pageNumber - 1) * filter.pageSize)         
+                .Take(filter.pageSize)           
                 .Select(a => new AdminSummaryDto 
                 {
                     PersonID = a.PersonID,
@@ -46,7 +57,7 @@ namespace StudyHubAPI.Repositories
                     HireDate = a.HireDate
                 }).ToListAsync();
 
-            return new PagedResponse<AdminSummaryDto>(admins, totalCount, pageNumber, pageSize);
+            return new PagedResponse<AdminSummaryDto>(admins, totalCount, filter.pageNumber, filter.pageSize);
         }
 
         public async Task<int> AddAdmin(Administrators NewAdmin)

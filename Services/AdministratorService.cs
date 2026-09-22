@@ -2,6 +2,7 @@
 using StudyHubAPI.Models.DTOs.Admin;
 using StudyHubAPI.Models.Entities;
 using StudyHubAPI.Models.Enums;
+using StudyHubAPI.Models.Filter;
 using StudyHubAPI.Repositories;
 using StudyHubAPI.Utils;
 
@@ -66,9 +67,9 @@ namespace StudyHubAPI.Services
         }
 
 
-        public Task<PagedResponse<AdminSummaryDto>> GetAllAdmins(int page, int pageSize)
+        public Task<PagedResponse<AdminSummaryDto>> GetAllAdmins(AdminQueryFilter filter)
         {
-            return _AdministratorRepository.GetAllAdmins(page, pageSize);
+            return _AdministratorRepository.GetAllAdmins(filter);
         }
 
        

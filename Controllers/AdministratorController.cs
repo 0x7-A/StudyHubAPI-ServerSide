@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using StudyHubAPI.Models.DTOs.Admin;
 using StudyHubAPI.Models.DTOs;
+using StudyHubAPI.Models.Filter;
 using StudyHubAPI.Models.Enums;
 using StudyHubAPI.Services;
 using System.Security.Claims;
@@ -73,19 +74,19 @@ namespace StudyHubAPI.Controllers
 
 
 
-        [HttpGet("All/{pageNumber:int}/{pageSize:int}", Name = "GetAllAdministrators")]
+        [HttpGet("All", Name = "GetAllAdministrators")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async  Task<ActionResult<PagedResponse<AdminSummaryDto>>> GetAllAdministrators(int pageNumber = 1, int pageSize = 10)
+        public async  Task<ActionResult<PagedResponse<AdminSummaryDto>>> GetAllAdministrators([FromQuery] AdminQueryFilter filter)
         {
-            if (pageNumber <= 0 || pageSize <= 0)
+            if (filter.pageNumber <= 0 || filter.pageSize <= 0)
             {
                 return BadRequest("Page number and page size must be greater than zero.");
             }
 
 
-            var AdminsList = await _administratorService.GetAllAdmins(pageNumber, pageSize);
+            var AdminsList = await _administratorService.GetAllAdmins(filter);
 
 
             if(AdminsList.TotalCount == 0)

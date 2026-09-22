@@ -43,7 +43,7 @@ namespace StudyHubAPI.Controllers
         }
 
         [Authorize(Roles = "Admin")]
-        [HttpGet("{pageNumber:int}/{pageSize:int}", Name = "GetAllReservation")]
+        [HttpGet("All", Name = "GetAllReservation")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
