@@ -84,6 +84,12 @@ namespace StudyHubAPI.Services
             {
                 return false;
             }
+
+            var folderPath = _configuration["FileStorage:WorkspaceImagesPath"]
+                 ?? @"C:\WorkspaceImages";
+
+            var fullPath = Path.Combine(folderPath, image.ImagePath);
+
             if (File.Exists(image.ImagePath))
             {
                 File.Delete(image.ImagePath);
