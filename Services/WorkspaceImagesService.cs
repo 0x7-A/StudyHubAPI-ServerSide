@@ -17,19 +17,14 @@ namespace StudyHubAPI.Services
         {
             var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
 
-
             var uniqueFileName = $"{Guid.NewGuid()}{ext}";
             var fileName = $"{Guid.NewGuid()}{ext}";
 
             var folderPath = _configuration["FileStorage:WorkspaceImagesPath"]?? "C:\\WorkspaceImages";
 
-
             Directory.CreateDirectory(folderPath);
-
-
             var fullFilePath = Path.Combine(folderPath, fileName);
 
-            // 5. Save the file
             using (var stream = new FileStream(fullFilePath, FileMode.Create))
             {
                 await file.CopyToAsync(stream);
@@ -37,6 +32,23 @@ namespace StudyHubAPI.Services
 
             return await _workspaceImagesRepository.UploadWorkspaceImage(new WorkspaceImages { ImagePath = fullFilePath, WorkspaceID = workspaceId});
         }
+
+
+        public async Task<bool> DeleteWorkspaceImage(int imageId)
+        {
+            var image = await _workspaceImagesRepository.GetWorkspaceImageById(imageId);
+            if (image == null)
+            {
+                return false;
+            }
+            if (File.Exists(image.ImagePath))
+            {
+                File.Delete(image.ImagePath);
+            }
+            
+            return await _workspaceImagesRepository.DeleteWorkspaceImage(image) > 0;
+        }
+
 
 
     }

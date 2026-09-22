@@ -37,5 +37,30 @@ namespace StudyHubAPI.Controllers
 
             return Ok(new { message = "Workspace image uploaded successfully." });
         }
+
+
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("{Id:int}", Name = "DeleteWorkspaceImage")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult> DeleteWorkspaceImage(int Id)
+        {
+            if (Id <= 0)
+            {
+                return BadRequest("personID can't be zero or less");
+            }
+
+            var Succseeded = await _workspaceImagesService.DeleteWorkspaceImage(Id);
+
+            if (Succseeded)
+            {
+                return NoContent();
+            }
+
+            return NotFound();
+        }
+
+
     }
 }
