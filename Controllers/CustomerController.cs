@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using StudyHubAPI.Models.DTOs;
 using StudyHubAPI.Models.DTOs.Customer;
 using StudyHubAPI.Models.Enums;
+using StudyHubAPI.Models.Filter;
 using StudyHubAPI.Services;
 using System.Security.Claims;
 
@@ -75,19 +76,19 @@ namespace StudyHubAPI.Controllers
 
 
         [Authorize(Roles = "Admin")]
-        [HttpGet("All/{pageNumber:int}/{pageSize:int}", Name = "GetAllCustomers")]
+        [HttpGet("All", Name = "GetAllCustomers")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<PagedResponse<CustomerSummaryDto>>> GetAllCustomers(int pageNumber = 1, int pageSize = 10)
+        public async Task<ActionResult<PagedResponse<CustomerSummaryDto>>> GetAllCustomers([FromQuery] CustomerQueryFilter filter)
         {
-            if (pageNumber <= 0 || pageSize <= 0)
+            if (filter.pageNumber <= 0 || filter.pageSize <= 0)
             {
                 return BadRequest("Page number and page size must be greater than zero.");
             }
 
 
-            var customersList = await _customerService.GetAllCustomers(pageNumber, pageSize);
+            var customersList = await _customerService.GetAllCustomers(filter);
 
 
             if (customersList.TotalCount == 0)

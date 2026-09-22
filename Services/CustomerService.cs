@@ -2,6 +2,7 @@
 using StudyHubAPI.Models.DTOs.Customer;
 using StudyHubAPI.Models.Entities;
 using StudyHubAPI.Models.Enums;
+using StudyHubAPI.Models.Filter;
 using StudyHubAPI.Repositories;
 using StudyHubAPI.Utils;
 namespace StudyHubAPI.Services
@@ -60,9 +61,9 @@ namespace StudyHubAPI.Services
         }
 
 
-        public  Task<PagedResponse<CustomerSummaryDto>> GetAllCustomers(int PageNumber,int PageSize)
+        public  Task<PagedResponse<CustomerSummaryDto>> GetAllCustomers(CustomerQueryFilter filter)
         {
-            return _CustomerRepository.GetAllCustomer(PageNumber, PageSize);
+            return _CustomerRepository.GetAllCustomer(filter);
         }
 
         public async Task<bool> UpdateCustomer(int PersonId, UpdateCustomerDto dto)

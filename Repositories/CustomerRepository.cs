@@ -3,13 +3,13 @@ using StudyHubAPI.Data;
 using StudyHubAPI.Models.DTOs;
 using StudyHubAPI.Models.DTOs.Customer;
 using StudyHubAPI.Models.Entities;
+using StudyHubAPI.Models.Filter;
 
 namespace StudyHubAPI.Repositories
 {
     public class CustomerRepository
     {
         private readonly StudyHubDbContext _context;
-
 
         public CustomerRepository(StudyHubDbContext context)
         {
@@ -34,19 +34,27 @@ namespace StudyHubAPI.Repositories
             return await _context.Customers.AsNoTracking().SingleOrDefaultAsync( p => p.PersonID == personID && p.IsActive);
         }
 
-
-
-        public async Task<PagedResponse<CustomerSummaryDto>> GetAllCustomer(int pageNumber, int pageSize)
+        public async Task<PagedResponse<CustomerSummaryDto>> GetAllCustomer(CustomerQueryFilter filter)
         {
             var query = _context.Customers.AsNoTracking().Where(p => p.IsActive);
+
+            if(!string.IsNullOrEmpty(filter.FullName))
+            {
+                query = query.Where(p => (p.FirstName + " " + p.LastName).Contains(filter.FullName));
+            }
+
+            if (filter.RegisteredAt.HasValue)
+            {
+                query = query.Where(p => p.RegisteredAt >= filter.RegisteredAt.Value);
+            }
 
             int totalCount = await query.CountAsync();
 
 
             var customers = await query
                 .OrderBy(a => a.PersonID)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
+                .Skip((filter.pageNumber - 1) * filter.pageSize)
+                .Take(filter.pageSize)
                 .Select(a => new CustomerSummaryDto
                 {
                     PersonID = a.PersonID,
@@ -55,7 +63,7 @@ namespace StudyHubAPI.Repositories
 
                 }).ToListAsync();
 
-            return new PagedResponse<CustomerSummaryDto>(customers, totalCount, pageNumber, pageSize);
+            return new PagedResponse<CustomerSummaryDto>(customers, totalCount, filter.pageNumber, filter.pageSize);
         }
 
     }
