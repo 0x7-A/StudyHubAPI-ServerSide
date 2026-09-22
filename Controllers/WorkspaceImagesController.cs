@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace StudyHubAPI.Controllers
 {
+    [Authorize(Roles = "Admin")]
     [Route("api/WorkspaceImages")]
     [ApiController]
     public class WorkspaceImagesController : ControllerBase
@@ -17,7 +18,7 @@ namespace StudyHubAPI.Controllers
             _workspaceImagesService = workspaceImagesService;
         }   
 
-        [Authorize(Roles = "Admin")]
+
         [HttpPost("Add/{workspaceId}", Name = "UploadWorkspaceImage")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -39,7 +40,36 @@ namespace StudyHubAPI.Controllers
         }
 
 
-        [Authorize(Roles = "Admin")]
+        [HttpGet("workspace/{workspaceId:int}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<WorkspaceImageResponseDto>))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetImagesByWorkspace(int workspaceId)
+        {
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var images = await _workspaceImagesService.GetWorkspaceImagesAsync(workspaceId, baseUrl);
+
+            if (images is null)
+                return NotFound($"Workspace with ID {workspaceId} does not exist.");
+
+            return Ok(images);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("{imageId:int}/file")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetImageFile(int imageId)
+        {
+            var fileDto = await _workspaceImagesService.GetImageFileAsync(imageId);
+
+            if (fileDto is null)
+                return NotFound("Image was not found or has been removed from disk.");
+
+           
+            return PhysicalFile(fileDto.FilePath, fileDto.ContentType);
+        }
+
+
         [HttpDelete("{Id:int}", Name = "DeleteWorkspaceImage")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

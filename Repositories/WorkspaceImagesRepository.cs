@@ -24,6 +24,22 @@ namespace StudyHubAPI.Repositories
             return await _context.WorkspaceImages.FindAsync(imageId);
         }
 
+        public async Task<List<WorkspaceImages>> GetImagesByWorkspaceIdAsync(int workspaceId)
+        {
+            return await _context.WorkspaceImages.Where(img => img.WorkspaceID == workspaceId)
+                .AsNoTracking().ToListAsync();
+        }
+
+        public async Task<bool> WorkspaceExistsAsync(int workspaceId)
+        {
+            return await _context.Workspaces.AnyAsync(w => w.WorkspaceID == workspaceId);
+        }
+
+        public async Task<WorkspaceImages?> GetImageByIdAsync(int imageId)
+        {
+            return await _context.WorkspaceImages.AsNoTracking().FirstOrDefaultAsync(img => img.ImageID == imageId);
+        }
+
         public async Task<int> DeleteWorkspaceImage(WorkspaceImages workspaceImage)
         {
             return await _context.WorkspaceImages.Where(wi => wi.ImageID == workspaceImage.ImageID).ExecuteDeleteAsync();

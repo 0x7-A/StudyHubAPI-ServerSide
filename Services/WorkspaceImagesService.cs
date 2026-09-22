@@ -1,5 +1,6 @@
-﻿using StudyHubAPI.Repositories;
+﻿using StudyHubAPI.Models.DTOs.WorkspaceImages;
 using StudyHubAPI.Models.Entities;
+using StudyHubAPI.Repositories;
 
 namespace StudyHubAPI.Services
 {
@@ -33,7 +34,49 @@ namespace StudyHubAPI.Services
             return await _workspaceImagesRepository.UploadWorkspaceImage(new WorkspaceImages { ImagePath = fullFilePath, WorkspaceID = workspaceId});
         }
 
+        public async Task<List<WorkspaceImageResponseDto>?> GetWorkspaceImagesAsync(int workspaceId, string baseUrl)
+        {
+            
+            var exists = await _workspaceImagesRepository.WorkspaceExistsAsync(workspaceId);
+            if (!exists)
+                return null; 
 
+            var images = await _workspaceImagesRepository.GetImagesByWorkspaceIdAsync(workspaceId);
+
+            return images.Select(img => new WorkspaceImageResponseDto
+            {
+                ImageId = img.ImageID,
+                WorkspaceId = img.WorkspaceID,
+
+                ImageUrl = $"{baseUrl}/api/WorkspaceImages/{img.ImageID}/file"
+            }).ToList();
+        }
+
+
+        public async Task<ImageFileStreamDto?> GetImageFileAsync(int imageId)
+        {
+            var image = await _workspaceImagesRepository.GetImageByIdAsync(imageId);
+            if (image == null)
+                return null;
+
+            if (!File.Exists(image.ImagePath))
+                return null;
+
+            var ext = Path.GetExtension(image.ImagePath).ToLowerInvariant();
+            var contentType = ext switch
+            {
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".webp" => "image/webp",
+                _ => "application/octet-stream"
+            };
+
+            return new ImageFileStreamDto
+            {
+                FilePath = image.ImagePath,
+                ContentType = contentType
+            };
+        }
         public async Task<bool> DeleteWorkspaceImage(int imageId)
         {
             var image = await _workspaceImagesRepository.GetWorkspaceImageById(imageId);
