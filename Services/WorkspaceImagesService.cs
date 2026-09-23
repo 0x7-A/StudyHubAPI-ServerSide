@@ -1,6 +1,7 @@
 ﻿using StudyHubAPI.Models.DTOs.WorkspaceImages;
 using StudyHubAPI.Models.Entities;
 using StudyHubAPI.Repositories;
+using StudyHubAPI.Utils;
 
 namespace StudyHubAPI.Services
 {
@@ -14,9 +15,19 @@ namespace StudyHubAPI.Services
             _workspaceImagesRepository = repository;
             _configuration = configuration;
         }
+
+
         public async Task<int> UploadWorkspaceImage(int workspaceId, IFormFile file)
         {
             var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+
+            if (await ImageValidator.IsValidImageAsync(file))
+            {
+                throw new InvalidOperationException("Invalid image file.");
+            }
+
+    
 
             var uniqueFileName = $"{Guid.NewGuid()}{ext}";
             var fileName = $"{Guid.NewGuid()}{ext}";
