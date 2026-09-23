@@ -3,6 +3,7 @@ using StudyHubAPI.Models.Entities;
 using StudyHubAPI.Repositories;
 using StudyHubAPI.Utils;
 
+
 namespace StudyHubAPI.Services
 {
     public class WorkspaceImagesService
@@ -16,20 +17,20 @@ namespace StudyHubAPI.Services
             _configuration = configuration;
         }
 
-
-        public async Task<int> UploadWorkspaceImage(int workspaceId, IFormFile file)
+        public async Task<ServiceResult<int>> UploadWorkspaceImage(int workspaceId, IFormFile file)
         {
+            if (file == null || file.Length == 0)
+                return ServiceResult<int>.Failure(400, "Please select an image file.");
+
+
             var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
 
 
             if (await ImageValidator.IsValidImageAsync(file))
             {
-                throw new InvalidOperationException("Invalid image file.");
+                return ServiceResult<int>.Failure(400, "Invalid image file.");
             }
 
-    
-
-            var uniqueFileName = $"{Guid.NewGuid()}{ext}";
             var fileName = $"{Guid.NewGuid()}{ext}";
 
             var folderPath = _configuration["FileStorage:WorkspaceImagesPath"]?? "C:\\WorkspaceImages";
@@ -42,16 +43,12 @@ namespace StudyHubAPI.Services
                 await file.CopyToAsync(stream);
             }
 
-            return await _workspaceImagesRepository.UploadWorkspaceImage(new WorkspaceImages { ImagePath = fullFilePath, WorkspaceID = workspaceId});
+            var result = await _workspaceImagesRepository.UploadWorkspaceImage(new WorkspaceImages { ImagePath = fullFilePath, WorkspaceID = workspaceId });
+            return ServiceResult<int>.Success(result,201);
         }
 
         public async Task<List<WorkspaceImageResponseDto>?> GetWorkspaceImagesAsync(int workspaceId, string baseUrl)
         {
-            
-            var exists = await _workspaceImagesRepository.WorkspaceExistsAsync(workspaceId);
-            if (!exists)
-                return null; 
-
             var images = await _workspaceImagesRepository.GetImagesByWorkspaceIdAsync(workspaceId);
 
             return images.Select(img => new WorkspaceImageResponseDto
@@ -64,14 +61,15 @@ namespace StudyHubAPI.Services
         }
 
 
-        public async Task<ImageFileStreamDto?> GetImageFileAsync(int imageId)
+        public async Task<ServiceResult<ImageFileStreamDto?>> GetImageFileAsync(int imageId)
         {
             var image = await _workspaceImagesRepository.GetImageByIdAsync(imageId);
             if (image == null)
-                return null;
+                return ServiceResult<ImageFileStreamDto?>.Failure(404, "Image not found.");
+
 
             if (!File.Exists(image.ImagePath))
-                return null;
+                return ServiceResult<ImageFileStreamDto?>.Failure(404, "Image file not found.")     ;
 
             var ext = Path.GetExtension(image.ImagePath).ToLowerInvariant();
             var contentType = ext switch
@@ -82,18 +80,16 @@ namespace StudyHubAPI.Services
                 _ => "application/octet-stream"
             };
 
-            return new ImageFileStreamDto
-            {
-                FilePath = image.ImagePath,
-                ContentType = contentType
-            };
+            return ServiceResult<ImageFileStreamDto?>.Success(new ImageFileStreamDto
+            { FilePath = image.ImagePath, ContentType = contentType}, 200);
         }
-        public async Task<bool> DeleteWorkspaceImage(int imageId)
+        public async Task<ServiceResult> DeleteWorkspaceImage(int imageId)
         {
             var image = await _workspaceImagesRepository.GetWorkspaceImageById(imageId);
             if (image == null)
             {
-                return false;
+                return ServiceResult.Failure(404, "Image not found.");
+         
             }
 
             var folderPath = _configuration["FileStorage:WorkspaceImagesPath"]
@@ -105,8 +101,13 @@ namespace StudyHubAPI.Services
             {
                 File.Delete(image.ImagePath);
             }
-            
-            return await _workspaceImagesRepository.DeleteWorkspaceImage(image) > 0;
+
+            if(await _workspaceImagesRepository.DeleteWorkspaceImage(image) > 0)
+            {
+                return ServiceResult.Success(204);
+            }
+
+            return ServiceResult.Failure(500, "Failed to delete workspace image.");
         }
 
 

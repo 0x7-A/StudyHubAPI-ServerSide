@@ -30,11 +30,6 @@ namespace StudyHubAPI.Repositories
                 .AsNoTracking().ToListAsync();
         }
 
-        public async Task<bool> WorkspaceExistsAsync(int workspaceId)
-        {
-            return await _context.Workspaces.AnyAsync(w => w.WorkspaceID == workspaceId);
-        }
-
         public async Task<WorkspaceImages?> GetImageByIdAsync(int imageId)
         {
             return await _context.WorkspaceImages.AsNoTracking().FirstOrDefaultAsync(img => img.ImageID == imageId);
