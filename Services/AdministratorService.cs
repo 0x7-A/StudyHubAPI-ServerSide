@@ -19,15 +19,15 @@ namespace StudyHubAPI.Services
             _PersonRepository = personRepository;
         }
 
-        public async Task<int> AddAdmin(CreateAdminDto dto)
+        public async Task<ServiceResult<int>> AddAdmin(CreateAdminDto dto)
         {
             if (await _PersonRepository.IsEmailTaken(dto.Email))
             {
-                return -1;
+                return ServiceResult<int>.Failure(409, "Email is already taken.");
             }
             if (await _PersonRepository.IsPhoneNumberTaken(dto.PhoneNumber))
             {
-                return -1;
+                return ServiceResult<int>.Failure(409, "Phone number is already taken.");
             }
 
             var NewAdmin = new Administrators
@@ -41,19 +41,19 @@ namespace StudyHubAPI.Services
                 Role = PersonRole.Admin
             };
 
-            return await _AdministratorRepository.AddAdmin(NewAdmin);
+            return  ServiceResult<int>.Success(await _AdministratorRepository.AddAdmin(NewAdmin));
         }
 
-        public async Task<AdminDetailsDto?> GetAdminByID(int personID)
+        public async Task<ServiceResult<AdminDetailsDto?>> GetAdminByID(int personID)
         {
             var Admin = await _AdministratorRepository.GetAdminByIdReadOnly(personID);
 
             if (Admin == null)
             {
-                return null;
+                return ServiceResult<AdminDetailsDto?>.Failure(404, "Admin not found.");
             }
 
-            return new AdminDetailsDto
+            return ServiceResult<AdminDetailsDto?>.Success(new AdminDetailsDto
             {
                 PersonID = Admin.PersonID,
                 FirstName = Admin.FirstName,
@@ -62,8 +62,7 @@ namespace StudyHubAPI.Services
                 PhoneNumber = Admin.PhoneNumber,
                 HireDate = Admin.HireDate,
                 Role = Admin.Role
-            };
-
+            });
         }
 
 
@@ -72,14 +71,14 @@ namespace StudyHubAPI.Services
             return _AdministratorRepository.GetAllAdmins(filter);
         }
 
-       
-        public async Task<bool> UpdateAdmin(int PersonID,UpdateAdminDto dto)
+
+        public async Task<ServiceResult<bool>> UpdateAdmin(int PersonID,UpdateAdminDto dto)
         {
             var Admin = await _AdministratorRepository.GetAdminByID(PersonID);
 
             if (Admin == null)
             {
-                return false;
+                return ServiceResult<bool>.Failure(404, "Admin not found.");
             }
             if (!string.IsNullOrEmpty(dto.FirstName))
             {
@@ -98,13 +97,13 @@ namespace StudyHubAPI.Services
             {
                 if(await _PersonRepository.IsPhoneNumberTaken(dto.PhoneNumber))
                 {
-                    return false;
+                    return ServiceResult<bool>.Failure(409, "Phone number is already taken.");
                 }
 
                 Admin.PhoneNumber = dto.PhoneNumber;
             }
 
-            return await _PersonRepository.SaveChangeAsync() > 0;
+            return ServiceResult<bool>.Success(await _PersonRepository.SaveChangeAsync() > 0);
         }
 
 

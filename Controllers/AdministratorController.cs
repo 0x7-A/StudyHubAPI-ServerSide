@@ -28,14 +28,14 @@ namespace StudyHubAPI.Controllers
         [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<ActionResult> AddAdmin(CreateAdminDto dto)
         {
-            int newPersonID = await _administratorService.AddAdmin(dto);
+            var result = await _administratorService.AddAdmin(dto);
 
-            if (newPersonID == -1)
+            if (!result.IsSuccess)
             {
-                return Conflict("Email or phone number is taken try again.");
+                return StatusCode(result.StatusCode, new { Error = result.ErrorMessage });
             }
 
-            return CreatedAtRoute("GetAdmin", new { Id = newPersonID }, newPersonID);
+            return CreatedAtRoute("GetAdmin", new { Id = result.Data }, result.Data);
         }
 
 
@@ -47,7 +47,7 @@ namespace StudyHubAPI.Controllers
         {
             if (Id <= 0 )
             {
-                return BadRequest("personID can't be zero or less");
+                return BadRequest(new { Error = "personID can't be zero or less" });
             }
 
             var currentUserIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -61,15 +61,15 @@ namespace StudyHubAPI.Controllers
                 return Forbid();
             }
 
-            var Admin = await _administratorService.GetAdminByID(Id);
+            var result = await _administratorService.GetAdminByID(Id);
 
 
-            if (Admin == null)
+            if (!result.IsSuccess)
             {
-                return NotFound("No Admins Found");
+                return StatusCode(result.StatusCode, new { Error = result.ErrorMessage });
             }
 
-            return Ok(Admin);
+            return Ok(result.Data);
         }
 
 
@@ -82,7 +82,7 @@ namespace StudyHubAPI.Controllers
         {
             if (filter.pageNumber <= 0 || filter.pageSize <= 0)
             {
-                return BadRequest("Page number and page size must be greater than zero.");
+                return BadRequest(new { Error = "Page number and page size must be greater than zero." });
             }
 
 
@@ -102,11 +102,12 @@ namespace StudyHubAPI.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<ActionResult> UpdateAdmin(int Id, UpdateAdminDto dto)
         {
             if (Id <= 0)
             {
-                return BadRequest("personID can't be zero or less");
+                return BadRequest(new { Error = "personID can't be zero or less" });
             }
 
 
@@ -121,15 +122,15 @@ namespace StudyHubAPI.Controllers
                 return Forbid();
             }
 
-            var Succseeded = await _administratorService.UpdateAdmin(Id, dto);
+            var result = await _administratorService.UpdateAdmin(Id, dto);
 
 
-            if (Succseeded)
+            if (result.IsSuccess)
             {
-                return NoContent();
+                return StatusCode(result.StatusCode);
             }
 
-            return NotFound();
+            return StatusCode(result.StatusCode, new { Error = result.ErrorMessage });
         }
 
 
@@ -142,7 +143,7 @@ namespace StudyHubAPI.Controllers
         {
             if (Id <= 0)
             {
-                return BadRequest("personID can't be zero or less");
+                return BadRequest(new { Error = "personID can't be zero or less" });
             }
 
             var Succseeded = await _administratorService.DeleteAdminByID(Id);
@@ -158,9 +159,5 @@ namespace StudyHubAPI.Controllers
 
 
 
-
-
-
     }
-
 }

@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using StudyHubAPI.Models.DTOs.Admin;
+﻿using Microsoft.AspNetCore.Mvc;
 using StudyHubAPI.Models.DTOs.Payment;
 using StudyHubAPI.Models.Enums;
 using StudyHubAPI.Services;

@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using StudyHubAPI.Models.DTOs;
 using StudyHubAPI.Models.DTOs.Customer;
@@ -7,7 +6,6 @@ using StudyHubAPI.Models.Enums;
 using StudyHubAPI.Models.Filter;
 using StudyHubAPI.Services;
 using System.Security.Claims;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace StudyHubAPI.Controllers
 {
@@ -27,6 +25,7 @@ namespace StudyHubAPI.Controllers
         [HttpPost("Add", Name = "AddCustomer")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<ActionResult> AddCustomer(CreateCustomerDto dto)
         {
             var result = await _customerService.AddCustomer(dto);
@@ -105,6 +104,7 @@ namespace StudyHubAPI.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<ActionResult> UpdateCustomer(int Id, UpdateCustomerDto dto)
         {
             if (Id <= 0)

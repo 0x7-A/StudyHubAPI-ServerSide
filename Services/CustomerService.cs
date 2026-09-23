@@ -22,11 +22,11 @@ namespace StudyHubAPI.Services
         {
             if (await _personRepository.IsEmailTaken(dto.Email))
             {
-                return ServiceResult<int>.Failure(400, "Email is already taken.");   
+                return ServiceResult<int>.Failure(409, "Email is already taken.");   
             }
             if (await _personRepository.IsPhoneNumberTaken(dto.PhoneNumber))
             {
-                return ServiceResult<int>.Failure(400, "Phone number is already taken.");
+                return ServiceResult<int>.Failure(409, "Phone number is already taken.");
             }
 
             var customer = new Customers
