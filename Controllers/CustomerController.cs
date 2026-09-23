@@ -7,6 +7,7 @@ using StudyHubAPI.Models.Enums;
 using StudyHubAPI.Models.Filter;
 using StudyHubAPI.Services;
 using System.Security.Claims;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace StudyHubAPI.Controllers
 {
@@ -28,15 +29,15 @@ namespace StudyHubAPI.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult> AddCustomer(CreateCustomerDto dto)
         {
-            int NewPersonID = await _customerService.AddCustomer(dto);
+            var result = await _customerService.AddCustomer(dto);
 
 
-            if (NewPersonID == -1)
+            if (!result.IsSuccess)
             {
-                return BadRequest();
+                return StatusCode(result.StatusCode, new { Error = result.ErrorMessage });
             }
 
-            return CreatedAtRoute("GetCustomer", new { Id = NewPersonID }, NewPersonID);
+            return CreatedAtRoute("GetCustomer", new { Id = result.Data }, result.Data);
         }
 
 
@@ -49,7 +50,7 @@ namespace StudyHubAPI.Controllers
         {
             if (Id <= 0)
             {
-                return BadRequest("personID can't be zero or less");
+                return BadRequest(new { Error = "personID can't be zero or less" });
             }
 
             var currentUserIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -63,15 +64,14 @@ namespace StudyHubAPI.Controllers
                 return Forbid();
             }
 
-            var customer = await _customerService.GetCustomerByID(Id);
+            var result = await _customerService.GetCustomerByID(Id);
 
-            if (customer == null)
+            if (!result.IsSuccess)
             {
-                return NotFound("The Customer Was not found");
+                return StatusCode(result.StatusCode, new { Error = result.ErrorMessage });
             }
 
-
-            return Ok(customer);
+            return StatusCode(result.StatusCode, result.Data);
         }
 
 
@@ -84,7 +84,7 @@ namespace StudyHubAPI.Controllers
         {
             if (filter.pageNumber <= 0 || filter.pageSize <= 0)
             {
-                return BadRequest("Page number and page size must be greater than zero.");
+                return BadRequest(new { Error = "Page number and page size must be greater than zero." });
             }
 
 
@@ -93,7 +93,7 @@ namespace StudyHubAPI.Controllers
 
             if (customersList.TotalCount == 0)
             {
-                return NotFound("No Customers Found");
+                return NotFound(new { Error = "No Customers Found" });
             }
 
             return Ok(customersList);
@@ -109,7 +109,7 @@ namespace StudyHubAPI.Controllers
         {
             if (Id <= 0)
             {
-                return BadRequest("personID can't be zero or less");
+                return BadRequest(new { Error = "personID can't be zero or less" });
             }
 
             var currentUserIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -123,16 +123,15 @@ namespace StudyHubAPI.Controllers
                 return Forbid();
             }
 
+            var result = await  _customerService.UpdateCustomer(Id, dto);
 
-            var Succseeded = await  _customerService.UpdateCustomer(Id, dto);
 
-
-            if (Succseeded)
+            if (!result.IsSuccess)
             {
-                return NoContent();
+                return StatusCode(result.StatusCode, new { Error = result.ErrorMessage });
             }
 
-            return NotFound();
+            return StatusCode(result.StatusCode);
         }
 
 
@@ -145,7 +144,7 @@ namespace StudyHubAPI.Controllers
         {
             if (Id <= 0)
             {
-                return BadRequest("personID can't be zero or less");
+                return BadRequest(new { Error = "personID can't be zero or less" });
             }
 
             var Succseeded = await _customerService.DeleteCustomerByID(Id);

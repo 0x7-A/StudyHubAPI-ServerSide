@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using StudyHubAPI.Services;
 using StudyHubAPI.Models.DTOs.WorkspaceImages;
 using Microsoft.AspNetCore.Mvc;

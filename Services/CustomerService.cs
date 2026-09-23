@@ -18,16 +18,15 @@ namespace StudyHubAPI.Services
             _personRepository = personRepository;
         }
 
-        public async Task<int> AddCustomer(CreateCustomerDto dto)
+        public async Task<ServiceResult<int>> AddCustomer(CreateCustomerDto dto)
         {
-            // check email and phone is not taken.
             if (await _personRepository.IsEmailTaken(dto.Email))
             {
-                return -1;
+                return ServiceResult<int>.Failure(400, "Email is already taken.");   
             }
             if (await _personRepository.IsPhoneNumberTaken(dto.PhoneNumber))
             {
-                return -1;
+                return ServiceResult<int>.Failure(400, "Phone number is already taken.");
             }
 
             var customer = new Customers
@@ -42,22 +41,21 @@ namespace StudyHubAPI.Services
 
             };
 
-            // 2. Add via Customer DbSet / Repository only
-            return await _CustomerRepository.AddCustomer(customer);
+           return ServiceResult<int>.Success(await _CustomerRepository.AddCustomer(customer), 201);
         }
 
 
-        public async Task<CustomerDetailsDto?> GetCustomerByID(int PersonID)
+        public async Task<ServiceResult<CustomerDetailsDto?>> GetCustomerByID(int PersonID)
         {
             var customer = await _CustomerRepository.GetCustomerByIdReadOnly(PersonID);
 
             if (customer == null)
             {
-                return null;
+                return ServiceResult<CustomerDetailsDto?>.Failure(404, "Customer not found.");
             }
 
-            return new CustomerDetailsDto { PersonID = customer.PersonID,  FirstName = customer.FirstName,
-                LastName = customer.LastName, Email = customer.Email, PhoneNumber = customer.PhoneNumber, RegisteredAt = customer.RegisteredAt};
+            return ServiceResult<CustomerDetailsDto?>.Success(new CustomerDetailsDto { PersonID = customer.PersonID,  FirstName = customer.FirstName,
+                LastName = customer.LastName, Email = customer.Email, PhoneNumber = customer.PhoneNumber, RegisteredAt = customer.RegisteredAt}, 200);
         }
 
 
@@ -66,13 +64,13 @@ namespace StudyHubAPI.Services
             return _CustomerRepository.GetAllCustomer(filter);
         }
 
-        public async Task<bool> UpdateCustomer(int PersonId, UpdateCustomerDto dto)
+        public async Task<ServiceResult> UpdateCustomer(int PersonId, UpdateCustomerDto dto)
         {
             var customer = await _CustomerRepository.GetCustomerByID(PersonId);
 
             if (customer == null)
             {
-                return false;
+                return ServiceResult.Failure(404, "Customer not found.");
             }
 
             if (!string.IsNullOrEmpty(dto.FirstName))
@@ -94,14 +92,18 @@ namespace StudyHubAPI.Services
             {
                 if (dto.PhoneNumber != customer.PhoneNumber && await _personRepository.IsPhoneNumberTaken(dto.PhoneNumber))
                 {
-                    return false;
+                    return ServiceResult.Failure(400, "Phone number is already taken.");
                 }
 
                 customer.PhoneNumber = dto.PhoneNumber;
             }
 
+            if(await _personRepository.SaveChangeAsync() > 0)
+            {
+                return ServiceResult.Success(204);
+            }
 
-            return await _personRepository.SaveChangeAsync() > 0;
+            return ServiceResult.Failure(500, "An error occurred while updating the customer.");    
         }
 
 
@@ -110,12 +112,5 @@ namespace StudyHubAPI.Services
             return _personRepository.SoftDeletePersonByIdAsync(personID);
         }
 
-
-
-
-
-
     }
-
-
 }
