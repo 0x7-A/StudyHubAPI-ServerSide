@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using StudyHubAPI.Services;
-using StudyHubAPI.Models.DTOs.WorkspaceImages;
 using Microsoft.AspNetCore.Mvc;
+using StudyHubAPI.Models.DTOs.WorkspaceImages;
+using StudyHubAPI.Services;
+using StudyHubAPI.Utils;
 
 namespace StudyHubAPI.Controllers
 {
@@ -26,17 +27,21 @@ namespace StudyHubAPI.Controllers
         {
             if (workspaceId <= 0)
             {
-                return BadRequest(new { error = "workspaceId can't be zero or less" });
+                return BadRequest(new { Error = "workspaceId can't be zero or less" });
             }
 
      
             var result = await _workspaceImagesService.UploadWorkspaceImage(workspaceId, dto.File);
             if (!result.IsSuccess)
             {
-                return StatusCode(result.StatusCode, new { error = result.ErrorMessage });
+                return result.Type switch
+                {
+                    ResultType.BadRequest => BadRequest(new { error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                };
             }
 
-            return StatusCode(result.StatusCode, result.Data);
+            return NoContent();
         }
 
 
@@ -49,7 +54,7 @@ namespace StudyHubAPI.Controllers
             var images = await _workspaceImagesService.GetWorkspaceImagesAsync(workspaceId, baseUrl);
 
             if (images is null)
-                return NotFound(new { error = $"Workspace with ID {workspaceId} does not exist." });
+                return NotFound(new { Error = $"Workspace with ID {workspaceId} does not exist." });
 
             return Ok(images);
         }
@@ -57,16 +62,30 @@ namespace StudyHubAPI.Controllers
         [AllowAnonymous]
         [HttpGet("{imageId:int}/file")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+
         public async Task<ActionResult> GetImageFile(int imageId)
         {
-            var fileDto = await _workspaceImagesService.GetImageFileAsync(imageId);
+            if (imageId <= 0)
+            {
+                return BadRequest(new { error = "Image ID can't be zero or less" });
+            }
 
-            if (!fileDto.IsSuccess)
-                return StatusCode(fileDto.StatusCode, new { error = fileDto.ErrorMessage });
+            var result = await _workspaceImagesService.GetImageFileAsync(imageId);
 
- 
-            return PhysicalFile(fileDto.Data.FilePath, fileDto.Data.ContentType);
+            if (!result.IsSuccess)
+            {
+                return result.Type switch
+                {
+                    ResultType.BadRequest => BadRequest(new { error = result.ErrorMessage }),
+                    ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                };
+            }
+
+
+            return PhysicalFile(result.Data.FilePath, result.Data.ContentType);
         }
 
 
@@ -78,17 +97,23 @@ namespace StudyHubAPI.Controllers
         {
             if (Id <= 0)
             {
-                return BadRequest(new { error = "Image ID can't be zero or less" }  );
+                return BadRequest(new { error = "Image ID can't be zero or less" });
             }
 
             var result = await _workspaceImagesService.DeleteWorkspaceImage(Id);
 
-            if (result.IsSuccess)
+            if (!result.IsSuccess)
             {
-                return StatusCode(result.StatusCode);
+                return result.Type switch
+                {
+                    ResultType.BadRequest => BadRequest(new { error = result.ErrorMessage }),
+                    ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                };
             }
 
-            return StatusCode(result.StatusCode, new { error = result.ErrorMessage });
+
+            return NoContent();
         }
 
 

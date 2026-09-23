@@ -22,11 +22,11 @@ namespace StudyHubAPI.Services
         {
             if (await _personRepository.IsEmailTaken(dto.Email))
             {
-                return ServiceResult<int>.Failure(409, "Email is already taken.");   
+                return ServiceResult<int>.Failure(ResultType.Conflict, "Email is already taken.");   
             }
             if (await _personRepository.IsPhoneNumberTaken(dto.PhoneNumber))
             {
-                return ServiceResult<int>.Failure(409, "Phone number is already taken.");
+                return ServiceResult<int>.Failure(ResultType.Conflict, "Phone number is already taken.");
             }
 
             var customer = new Customers
@@ -41,7 +41,7 @@ namespace StudyHubAPI.Services
 
             };
 
-           return ServiceResult<int>.Success(await _CustomerRepository.AddCustomer(customer), 201);
+           return ServiceResult<int>.Success(await _CustomerRepository.AddCustomer(customer), ResultType.Created);
         }
 
 
@@ -51,11 +51,11 @@ namespace StudyHubAPI.Services
 
             if (customer == null)
             {
-                return ServiceResult<CustomerDetailsDto?>.Failure(404, "Customer not found.");
+                return ServiceResult<CustomerDetailsDto?>.Failure(ResultType.NotFound, "Customer not found.");
             }
 
             return ServiceResult<CustomerDetailsDto?>.Success(new CustomerDetailsDto { PersonID = customer.PersonID,  FirstName = customer.FirstName,
-                LastName = customer.LastName, Email = customer.Email, PhoneNumber = customer.PhoneNumber, RegisteredAt = customer.RegisteredAt}, 200);
+                LastName = customer.LastName, Email = customer.Email, PhoneNumber = customer.PhoneNumber, RegisteredAt = customer.RegisteredAt}, ResultType.Ok);
         }
 
 
@@ -70,7 +70,7 @@ namespace StudyHubAPI.Services
 
             if (customer == null)
             {
-                return ServiceResult.Failure(404, "Customer not found.");
+                return ServiceResult.Failure(ResultType.NotFound, "Customer not found.");
             }
 
             if (!string.IsNullOrEmpty(dto.FirstName))
@@ -92,7 +92,7 @@ namespace StudyHubAPI.Services
             {
                 if (dto.PhoneNumber != customer.PhoneNumber && await _personRepository.IsPhoneNumberTaken(dto.PhoneNumber))
                 {
-                    return ServiceResult.Failure(400, "Phone number is already taken.");
+                    return ServiceResult.Failure(ResultType.BadRequest, "Phone number is already taken.");
                 }
 
                 customer.PhoneNumber = dto.PhoneNumber;
@@ -100,10 +100,10 @@ namespace StudyHubAPI.Services
 
             if(await _personRepository.SaveChangeAsync() > 0)
             {
-                return ServiceResult.Success(204);
+                return ServiceResult.Success(ResultType.NoContent   );
             }
 
-            return ServiceResult.Failure(500, "An error occurred while updating the customer.");    
+            return ServiceResult.Failure(ResultType.Failure, "An error occurred while updating the customer.");    
         }
 
 

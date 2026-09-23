@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using StudyHubAPI.Models.DTOs;
 using StudyHubAPI.Models.DTOs.Customer;
 using StudyHubAPI.Models.Enums;
 using StudyHubAPI.Models.Filter;
 using StudyHubAPI.Services;
+using StudyHubAPI.Utils;
 using System.Security.Claims;
 
 namespace StudyHubAPI.Controllers
@@ -33,7 +35,13 @@ namespace StudyHubAPI.Controllers
 
             if (!result.IsSuccess)
             {
-                return StatusCode(result.StatusCode, new { Error = result.ErrorMessage });
+                return result.Type switch
+                {
+                    ResultType.BadRequest => BadRequest(new { error = result.ErrorMessage }),
+                    ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
+                    ResultType.Conflict => Conflict(new { error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                };
             }
 
             return CreatedAtRoute("GetCustomer", new { Id = result.Data }, result.Data);
@@ -45,6 +53,10 @@ namespace StudyHubAPI.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+
+
         public async Task<ActionResult<CustomerDetailsDto>> GetCustomer(int Id)
         {
             if (Id <= 0)
@@ -67,10 +79,16 @@ namespace StudyHubAPI.Controllers
 
             if (!result.IsSuccess)
             {
-                return StatusCode(result.StatusCode, new { Error = result.ErrorMessage });
+                return result.Type switch
+                {
+                    ResultType.BadRequest => BadRequest(new { error = result.ErrorMessage }),
+                    ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
+                    ResultType.Conflict => Conflict(new { error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                };
             }
 
-            return StatusCode(result.StatusCode, result.Data);
+            return Ok(result.Data);
         }
 
 
@@ -128,10 +146,16 @@ namespace StudyHubAPI.Controllers
 
             if (!result.IsSuccess)
             {
-                return StatusCode(result.StatusCode, new { Error = result.ErrorMessage });
+                return result.Type switch
+                {
+                    ResultType.BadRequest => BadRequest(new { error = result.ErrorMessage }),
+                    ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
+                    ResultType.Conflict => Conflict(new { error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                };
             }
 
-            return StatusCode(result.StatusCode);
+            return NoContent();
         }
 
 

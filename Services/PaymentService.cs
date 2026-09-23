@@ -2,7 +2,9 @@
 using StudyHubAPI.Models.DTOs.Payment;
 using StudyHubAPI.Models.Entities;
 using StudyHubAPI.Models.Enums;
+using StudyHubAPI.Utils;
 using Microsoft.Identity.Client;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace StudyHubAPI.Services
 {
@@ -47,7 +49,7 @@ namespace StudyHubAPI.Services
             return await _WorkspaceRepository.GetHourlyRate(WorkspaceID) * HourRate;
         }
 
-        private async Task<bool> _updatePayment(int reservationID, PaymentStatus status)
+        private async Task<ServiceResult> _updatePayment(int reservationID, PaymentStatus status)
         {
             using var transaction = await _ReservationRepository.BeginTransactionAsync();
 
@@ -56,7 +58,7 @@ namespace StudyHubAPI.Services
                 if (await _PaymentRepository.SaveChangeAsync() == 0)
                 {
                     await transaction.RollbackAsync();
-                    return false;
+                    return ServiceResult.Failure(ResultType.Failure, "Failed to update payment.");
                 }
 
                 if (status == PaymentStatus.Completed)
@@ -64,7 +66,7 @@ namespace StudyHubAPI.Services
                     if (await _ReservationRepository.UpdateReservation(reservationID, ReservationStatus.Confirmed) == 0)
                     {
                         await transaction.RollbackAsync();
-                        return false;
+                        return ServiceResult.Failure(ResultType.Failure, "Failed to update reservation.");
                     }
                 }
                 else if (status == PaymentStatus.Cancelled)
@@ -72,12 +74,12 @@ namespace StudyHubAPI.Services
                     if (await _ReservationRepository.UpdateReservation(reservationID, ReservationStatus.Cancelled) == 0)
                     {
                         await transaction.RollbackAsync();
-                        return false;
+                        return ServiceResult.Failure(ResultType.Failure, "Failed to update reservation.");
                     }
                 }
 
                 await transaction.CommitAsync();
-                return true;
+                return ServiceResult.Success(ResultType.Ok);
             }
             catch
             {
@@ -114,13 +116,19 @@ namespace StudyHubAPI.Services
         }
 
 
-        public Task<PaymentDetialsDto?> GetPaymentByID(int ID)
+        public  async Task<ServiceResult<PaymentDetialsDto?>> GetPaymentByID(int ID)
         {
-            return _PaymentRepository.GetPaymntByIDDto(ID);
+            var payment = await  _PaymentRepository.GetPaymntByIDDto(ID);
 
+            if(payment == null)
+            {
+                return ServiceResult<PaymentDetialsDto?>.Failure(ResultType.NotFound, "Payment not found");
+            }
+
+            return ServiceResult<PaymentDetialsDto?>.Success(payment, ResultType.Ok);
         }
 
-        public async Task<int> AddPayment(CreatePaymentDto dto)
+        public async Task<ServiceResult<int>> AddPayment(CreatePaymentDto dto)
         {
             // initalliay with payment staus = pending after calcukating the price and
             // adding the payment. 
@@ -128,29 +136,28 @@ namespace StudyHubAPI.Services
 
            if (price == -1)
            {
-                return -1;
+                return ServiceResult<int>.Failure(ResultType.Failure, "Failed to calculate payment amount");
            }
 
-            return await _PaymentRepository.AddPayment(GetPaymentObj(dto, price));
+            return ServiceResult<int>.Success(await _PaymentRepository.AddPayment(GetPaymentObj(dto, price)));
         }
 
       
-        public async Task<bool> UpdatePayment(int Id, UpdatePaymentDto dto)
+        public async Task<ServiceResult> UpdatePayment(int Id, UpdatePaymentDto dto)
         {
-            if (dto.PaymentStatus == PaymentStatus.Completed)
-            {
-                return false;
-            }
-
-
             using var transaction = await _PaymentRepository.BeginTransactionAsync();
             try
             {
                 var payment = await _PaymentRepository.GetPaymentsByID(Id);
 
-                if (payment == null || payment.PaymentStatus != PaymentStatus.Pending)
+                if (payment == null)
                 {
-                    return false;
+                    return ServiceResult.Failure(ResultType.NotFound, "Payment not found");
+                }
+
+                if (payment.PaymentStatus != PaymentStatus.Pending)
+                {
+                    return ServiceResult.Failure(ResultType.BadRequest, "cannot edit completed or cancelled payment");
                 }
 
                 payment.PaymentStatus = dto.PaymentStatus;
@@ -163,7 +170,7 @@ namespace StudyHubAPI.Services
                 // 4. Save Payment changes
                 if (await _PaymentRepository.SaveChangeAsync() <= 0)
                 {
-                    return false;
+                    return ServiceResult.Failure(ResultType.Failure, "Failed to update payment");
                 }
 
 
@@ -174,12 +181,12 @@ namespace StudyHubAPI.Services
 
                     if (rowsAffected <= 0)
                     {
-                        return false;
+                        return    ServiceResult.Failure(ResultType.Failure, "Failed to update reservation");
                     }
                 }
                 // 6. Commit all changes together
                 await transaction.CommitAsync();
-                return true;
+                return ServiceResult.Success(ResultType.NoContent);
             }
             catch
             {

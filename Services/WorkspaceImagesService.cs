@@ -20,7 +20,7 @@ namespace StudyHubAPI.Services
         public async Task<ServiceResult<int>> UploadWorkspaceImage(int workspaceId, IFormFile file)
         {
             if (file == null || file.Length == 0)
-                return ServiceResult<int>.Failure(400, "Please select an image file.");
+                return ServiceResult<int>.Failure(ResultType.BadRequest, "Please select an image file.");
 
 
             var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
@@ -28,7 +28,7 @@ namespace StudyHubAPI.Services
 
             if (await ImageValidator.IsValidImageAsync(file))
             {
-                return ServiceResult<int>.Failure(400, "Invalid image file.");
+                return ServiceResult<int>.Failure(ResultType.BadRequest, "Invalid image file.");
             }
 
             var fileName = $"{Guid.NewGuid()}{ext}";
@@ -44,7 +44,7 @@ namespace StudyHubAPI.Services
             }
 
             var result = await _workspaceImagesRepository.UploadWorkspaceImage(new WorkspaceImages { ImagePath = fullFilePath, WorkspaceID = workspaceId });
-            return ServiceResult<int>.Success(result,201);
+            return ServiceResult<int>.Success(result, ResultType.Created);
         }
 
         public async Task<List<WorkspaceImageResponseDto>?> GetWorkspaceImagesAsync(int workspaceId, string baseUrl)
@@ -65,11 +65,11 @@ namespace StudyHubAPI.Services
         {
             var image = await _workspaceImagesRepository.GetImageByIdAsync(imageId);
             if (image == null)
-                return ServiceResult<ImageFileStreamDto?>.Failure(404, "Image not found.");
+                return ServiceResult<ImageFileStreamDto?>.Failure(ResultType.NotFound, "Image not found.");
 
 
             if (!File.Exists(image.ImagePath))
-                return ServiceResult<ImageFileStreamDto?>.Failure(404, "Image file not found.")     ;
+                return ServiceResult<ImageFileStreamDto?>.Failure(ResultType.NotFound, "Image file not found.")     ;
 
             var ext = Path.GetExtension(image.ImagePath).ToLowerInvariant();
             var contentType = ext switch
@@ -81,14 +81,14 @@ namespace StudyHubAPI.Services
             };
 
             return ServiceResult<ImageFileStreamDto?>.Success(new ImageFileStreamDto
-            { FilePath = image.ImagePath, ContentType = contentType}, 200);
+            { FilePath = image.ImagePath, ContentType = contentType}, ResultType.Ok);
         }
         public async Task<ServiceResult> DeleteWorkspaceImage(int imageId)
         {
             var image = await _workspaceImagesRepository.GetWorkspaceImageById(imageId);
             if (image == null)
             {
-                return ServiceResult.Failure(404, "Image not found.");
+                return ServiceResult.Failure(ResultType.NotFound, "Image not found.");
          
             }
 
@@ -104,10 +104,10 @@ namespace StudyHubAPI.Services
 
             if(await _workspaceImagesRepository.DeleteWorkspaceImage(image) > 0)
             {
-                return ServiceResult.Success(204);
+                return ServiceResult.Success(ResultType.NoContent);
             }
 
-            return ServiceResult.Failure(500, "Failed to delete workspace image.");
+            return ServiceResult.Failure(ResultType.Failure, "Failed to delete workspace image.");
         }
 
 

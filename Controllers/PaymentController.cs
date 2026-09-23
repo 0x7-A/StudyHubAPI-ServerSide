@@ -2,7 +2,9 @@
 using StudyHubAPI.Models.DTOs.Payment;
 using StudyHubAPI.Models.Enums;
 using StudyHubAPI.Services;
+using StudyHubAPI.Utils;
 using System.Security.Claims;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace StudyHubAPI.Controllers
 {
@@ -10,29 +12,29 @@ namespace StudyHubAPI.Controllers
     [ApiController]
     public class PaymentController : ControllerBase
     {
-
         private readonly PaymentService _paymentService;
-
         public PaymentController(PaymentService paymentService)
         {
             _paymentService = paymentService;
         }
 
-
         [HttpPost("Add", Name = "AddPayment")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<ActionResult> AddPayment(CreatePaymentDto dto)
         {
-            int newPaymentID = await _paymentService.AddPayment(dto);
+            var result = await _paymentService.AddPayment(dto);
 
-            if (newPaymentID == -1)
+            if (!result.IsSuccess)
             {
-                return BadRequest();
+                return result.Type switch
+                {
+                    ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                };
             }
 
-            return CreatedAtRoute("GetPayment", new { Id = newPaymentID }, newPaymentID);
+            return CreatedAtRoute("GetPayment", new { Id = result.Data }, result.Data);
         }
 
 
@@ -46,15 +48,22 @@ namespace StudyHubAPI.Controllers
         {
             if (Id <= 0)
             {
-                return BadRequest("PaymentID can't be zero or less");
+                return BadRequest(new { Error = "PaymentID can't be zero or less" });
             }
 
-           
-            var payment = await _paymentService.GetPaymentByID(Id);
-            if (payment == null)
+            var result = await _paymentService.GetPaymentByID(Id);
+            if (!result.IsSuccess)
             {
-                return NotFound($"No payment found with ID {Id}.");
+                return result.Type switch
+                {
+                    ResultType.BadRequest => BadRequest(new { error = result.ErrorMessage }),
+                    ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                };
             }
+
+
+
             var currentUserIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(currentUserIdClaim, out int currentUserId))
             {
@@ -63,12 +72,12 @@ namespace StudyHubAPI.Controllers
 
             var IsAdmin = User.IsInRole(nameof(PersonRole.SuperAdmin)) || User.IsInRole(nameof(PersonRole.Admin));
 
-            if (!IsAdmin && currentUserId != payment.CustomerID)
+            if (!IsAdmin && currentUserId != result.Data.CustomerID)
             {
                 return Forbid();
             }
 
-            return Ok(payment);
+            return Ok(result.Data);
         }
 
 
@@ -76,20 +85,23 @@ namespace StudyHubAPI.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult> UpdatePayment(int Id, UpdatePaymentDto dto)
         {
             if (Id <= 0)
             {
-                return BadRequest("PaymentID can't be zero or less");
+                return BadRequest(new { Error = "PaymentID can't be zero or less" });
             }
 
-             var Successd = await _paymentService.UpdatePayment(Id, dto);
+             var result = await _paymentService.UpdatePayment(Id, dto);
 
-            if(!Successd)
+            if (!result.IsSuccess)
             {
-                return NotFound();
+                return result.Type switch
+                {
+                    ResultType.BadRequest => BadRequest(new { error = result.ErrorMessage }),
+                    ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                };
             }
 
             return NoContent();
@@ -100,13 +112,11 @@ namespace StudyHubAPI.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<IEnumerable<PaymentDetialsDto>>> GetAllPendingPayment(int CustomerID)
         {
             if (CustomerID <= 0)
             {
-                return BadRequest("PaymentID can't be zero or less");
+                return BadRequest(new { Error = "PaymentID can't be zero or less" });
             }
 
 

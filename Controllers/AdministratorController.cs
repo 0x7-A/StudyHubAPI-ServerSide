@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using StudyHubAPI.Models.DTOs.Admin;
 using StudyHubAPI.Models.DTOs;
-using StudyHubAPI.Models.Filter;
+using StudyHubAPI.Models.DTOs.Admin;
 using StudyHubAPI.Models.Enums;
+using StudyHubAPI.Models.Filter;
 using StudyHubAPI.Services;
+using StudyHubAPI.Utils;
 using System.Security.Claims;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace StudyHubAPI.Controllers
 {
@@ -32,7 +34,13 @@ namespace StudyHubAPI.Controllers
 
             if (!result.IsSuccess)
             {
-                return StatusCode(result.StatusCode, new { Error = result.ErrorMessage });
+                return result.Type switch
+                {
+
+                    ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
+                    ResultType.Conflict => Conflict(new { error = result.ErrorMessage }),
+                    _ => BadRequest(new { error = result.ErrorMessage })
+                };
             }
 
             return CreatedAtRoute("GetAdmin", new { Id = result.Data }, result.Data);
@@ -66,7 +74,13 @@ namespace StudyHubAPI.Controllers
 
             if (!result.IsSuccess)
             {
-                return StatusCode(result.StatusCode, new { Error = result.ErrorMessage });
+                return result.Type switch
+                {
+                    ResultType.Ok => Ok(result.Data),
+
+                    ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                };
             }
 
             return Ok(result.Data);
@@ -89,9 +103,9 @@ namespace StudyHubAPI.Controllers
             var AdminsList = await _administratorService.GetAllAdmins(filter);
 
 
-            if(AdminsList.TotalCount == 0)
+            if (AdminsList.TotalCount == 0)
             {
-                return NotFound("No Admins Found");
+                return NotFound(new { Error = "No Admins Found" });
             }
 
             return Ok(AdminsList);
@@ -125,12 +139,18 @@ namespace StudyHubAPI.Controllers
             var result = await _administratorService.UpdateAdmin(Id, dto);
 
 
-            if (result.IsSuccess)
+            if (!result.IsSuccess)
             {
-                return StatusCode(result.StatusCode);
+                return result.Type switch
+                {
+                    ResultType.BadRequest => BadRequest(new { error = result.ErrorMessage }),
+                    ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
+                    ResultType.Conflict => Conflict(new { error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                };
             }
 
-            return StatusCode(result.StatusCode, new { Error = result.ErrorMessage });
+            return NoContent();
         }
 
 

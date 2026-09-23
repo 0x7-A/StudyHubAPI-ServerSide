@@ -23,11 +23,11 @@ namespace StudyHubAPI.Services
         {
             if (await _PersonRepository.IsEmailTaken(dto.Email))
             {
-                return ServiceResult<int>.Failure(409, "Email is already taken.");
+                return ServiceResult<int>.Failure(ResultType.Conflict, "Email is already taken.");
             }
             if (await _PersonRepository.IsPhoneNumberTaken(dto.PhoneNumber))
             {
-                return ServiceResult<int>.Failure(409, "Phone number is already taken.");
+                return ServiceResult<int>.Failure(ResultType.Conflict, "Phone number is already taken.");
             }
 
             var NewAdmin = new Administrators
@@ -41,7 +41,7 @@ namespace StudyHubAPI.Services
                 Role = PersonRole.Admin
             };
 
-            return  ServiceResult<int>.Success(await _AdministratorRepository.AddAdmin(NewAdmin));
+            return  ServiceResult<int>.Success(await _AdministratorRepository.AddAdmin(NewAdmin), ResultType.NoContent);
         }
 
         public async Task<ServiceResult<AdminDetailsDto?>> GetAdminByID(int personID)
@@ -50,7 +50,7 @@ namespace StudyHubAPI.Services
 
             if (Admin == null)
             {
-                return ServiceResult<AdminDetailsDto?>.Failure(404, "Admin not found.");
+                return ServiceResult<AdminDetailsDto?>.Failure(ResultType.NotFound, "Admin not found.");
             }
 
             return ServiceResult<AdminDetailsDto?>.Success(new AdminDetailsDto
@@ -78,7 +78,7 @@ namespace StudyHubAPI.Services
 
             if (Admin == null)
             {
-                return ServiceResult<bool>.Failure(404, "Admin not found.");
+                return ServiceResult<bool>.Failure(ResultType.NotFound, "Admin not found.");
             }
             if (!string.IsNullOrEmpty(dto.FirstName))
             {
@@ -97,7 +97,7 @@ namespace StudyHubAPI.Services
             {
                 if(await _PersonRepository.IsPhoneNumberTaken(dto.PhoneNumber))
                 {
-                    return ServiceResult<bool>.Failure(409, "Phone number is already taken.");
+                    return ServiceResult<bool>.Failure(ResultType.Conflict, "Phone number is already taken.");
                 }
 
                 Admin.PhoneNumber = dto.PhoneNumber;
