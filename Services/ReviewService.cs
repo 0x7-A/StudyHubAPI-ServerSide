@@ -1,6 +1,7 @@
 ﻿using StudyHubAPI.Repositories;
 using StudyHubAPI.Models.Entities;
 using StudyHubAPI.Models.DTOs.Review;
+using StudyHubAPI.Utils;
 
 namespace StudyHubAPI.Services
 {
@@ -15,37 +16,34 @@ namespace StudyHubAPI.Services
             _ReservationRepository = reservationRepository;
         }
 
-        public async Task<ReviewDetailsDto?> GetReviewByID(int ReviewID)
+        public async Task<ServiceResult<ReviewDetailsDto?>> GetReviewByID(int ReviewID)
         {
             var review = await _ReviewRepository.GetReviewByID(ReviewID);
             if (review == null)
             {
-                return null;
+                return ServiceResult<ReviewDetailsDto?>.Failure(ResultType.NotFound, "Review not found");
             }
 
-            return new ReviewDetailsDto
+            return ServiceResult<ReviewDetailsDto?>.Success(new ReviewDetailsDto
             {
                 ReviewID = review.ReviewID,
                 ReservationID = review.ReservationID,
                 Rate = review.Rate,
                 Comment = review.Comment
-            };
+            }, ResultType.Ok);
         }
 
 
-        public async Task<int> AddReview(CreateReviewDto dto)
+        public async Task<ServiceResult<int>> AddReview(CreateReviewDto dto)
         {
-
             // check if this reservation vaild and status = completed
-
             if(await _ReservationRepository.IsValidReservationForReview(dto.ReservationID)!)
             {
-                return -1;
+                return ServiceResult<int>.Failure(ResultType.BadRequest, "Review Can done ater the reservation is completed");
             }
 
-            var Review = new Reviews { ReservationID = dto.ReservationID, Comment = dto.Comment, Rate = dto.Rate };
-
-            return await _ReviewRepository.AddReview(Review);
+            return ServiceResult<int>.Success(await _ReviewRepository.AddReview(new Reviews 
+            { ReservationID = dto.ReservationID, Comment = dto.Comment, Rate = dto.Rate }), ResultType.Created);
         }
 
         public Task<List<string>> GetAllComments()

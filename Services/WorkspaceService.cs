@@ -1,7 +1,8 @@
-﻿using StudyHubAPI.Repositories;
+﻿using StudyHubAPI.Models.DTOs.Workspace;
 using StudyHubAPI.Models.Entities;
 using StudyHubAPI.Models.Enums;
-using StudyHubAPI.Models.DTOs.Workspace;
+using StudyHubAPI.Repositories;
+using StudyHubAPI.Utils;
 
 
 namespace StudyHubAPI.Services
@@ -17,17 +18,23 @@ namespace StudyHubAPI.Services
         }
 
 
-        public async Task<WorkspaceSummaryDto?> GetWorkspaceByID(int WorkspaceID)
+        public async Task<ServiceResult<WorkspaceSummaryDto?>> GetWorkspaceByID(int WorkspaceID)
         {
            var workspace = await _WorkspaceRepository.GetWorkSpaceByID(WorkspaceID);
 
             if (workspace == null)
             {
-                return null;
+                return ServiceResult<WorkspaceSummaryDto?>.Failure(ResultType.NotFound, "Workspace not found");
             }
 
-            return new WorkspaceSummaryDto { WorkspaceID = workspace.WorkspaceID ,Description = workspace.Description, HourlyRate = workspace.HourlyRate,
-                MaximumCapacity = workspace.MaximumCapacity, WorkspaceStatus = workspace.WorkspaceStatus } ;
+            return ServiceResult<WorkspaceSummaryDto?>.Success( new WorkspaceSummaryDto
+            {
+                WorkspaceID = workspace.WorkspaceID,
+                Description = workspace.Description,
+                HourlyRate = workspace.HourlyRate,
+                MaximumCapacity = workspace.MaximumCapacity,
+                WorkspaceStatus = workspace.WorkspaceStatus
+            },ResultType.Ok);
           
         }
 
@@ -46,13 +53,13 @@ namespace StudyHubAPI.Services
         }
 
 
-        public async Task<bool> UpdateWorkspace(int workspaceId, UpdateWorkspaceDto dto)
+        public async Task<ServiceResult> UpdateWorkspace(int workspaceId, UpdateWorkspaceDto dto)
         {
             Workspaces? workspace = await _WorkspaceRepository.GetWorkSpaceByID(workspaceId);
 
             if (workspace == null)
             {
-                return false;
+                return ServiceResult.Failure(ResultType.NotFound, "Workspace not found");
             }
 
             if (dto.Description != null)
@@ -71,23 +78,35 @@ namespace StudyHubAPI.Services
             }
 
 
-            return await _WorkspaceRepository.SaveChangesAsync() > 0;
+            if(await _WorkspaceRepository.SaveChangesAsync() > 0)
+            {
+                return ServiceResult.Success(ResultType.Ok);
+
+            }
+                return ServiceResult.Failure(ResultType.Failure, "Failed to update workspace");
 
         }
 
 
-        public async  Task<bool> SetWorkSpaceToMaintence(int workSpaceID)
+        public async  Task<ServiceResult> SetWorkSpaceToMaintence(int workSpaceID)
         {
-
             // in next versions, I will do action for next reservation on the specfiied workspace
 
-            return await _WorkspaceRepository.UpdateWorkspaceStatus(workSpaceID, WorkspaceStatus.UnderMaintenance) > 0;
+            if (await _WorkspaceRepository.UpdateWorkspaceStatus(workSpaceID, WorkspaceStatus.UnderMaintenance) > 0)
+            {
+                return ServiceResult.Success(ResultType.Ok);
+            }
+            return ServiceResult.Failure(ResultType.Failure, "Failed to set workspace to maintenance");
         }
 
 
-        public async Task<bool> SetWorkspaceToAvailable(int workSpaceID)
+        public async Task<ServiceResult> SetWorkspaceToAvailable(int workSpaceID)
         {
-            return await _WorkspaceRepository.UpdateWorkspaceStatus(workSpaceID, WorkspaceStatus.Available) > 0;
+            if (await _WorkspaceRepository.UpdateWorkspaceStatus(workSpaceID, WorkspaceStatus.Available) > 0)
+            {
+                return ServiceResult.Success(ResultType.Ok);
+            }
+            return ServiceResult.Failure(ResultType.Failure, "Failed to set workspace to maintenance");
         }
 
         public async Task<bool> DeleteWorkspace()

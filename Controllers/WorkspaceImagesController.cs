@@ -36,8 +36,9 @@ namespace StudyHubAPI.Controllers
             {
                 return result.Type switch
                 {
-                    ResultType.BadRequest => BadRequest(new { error = result.ErrorMessage }),
-                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                    ResultType.BadRequest => BadRequest(new { Error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." }),
+                    _ => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." })
                 };
             }
 
@@ -80,7 +81,8 @@ namespace StudyHubAPI.Controllers
                 {
                     ResultType.BadRequest => BadRequest(new { error = result.ErrorMessage }),
                     ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
-                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." }),
+                    _ => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." })
                 };
             }
 
@@ -108,7 +110,8 @@ namespace StudyHubAPI.Controllers
                 {
                     ResultType.BadRequest => BadRequest(new { error = result.ErrorMessage }),
                     ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
-                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." }),
+                    _ => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." })
                 };
             }
 

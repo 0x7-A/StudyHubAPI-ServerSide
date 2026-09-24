@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using StudyHubAPI.Models.DTOs.Review;
 using StudyHubAPI.Services;
+using StudyHubAPI.Utils;
 
 namespace StudyHubAPI.Controllers
 {
@@ -33,6 +33,7 @@ namespace StudyHubAPI.Controllers
         [HttpGet("{reviewID:int}", Name = "GetReviewByID")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ReviewDetailsDto>> GetReviewByID(int reviewID)
         {
             if(reviewID <= 0)
@@ -40,14 +41,19 @@ namespace StudyHubAPI.Controllers
                 return BadRequest("ReviewID  can't be zero or less ");
             }
 
-            var Review = _reviewService.GetReviewByID(reviewID);
+            var result = await _reviewService.GetReviewByID(reviewID);
 
-            if(Review == null)
+            if(!result.IsSuccess)
             {
-                return NotFound("Was not Found");
+                return result.Type switch
+                {
+                    ResultType.NotFound => NotFound(new { Error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." }),
+                    _ => BadRequest(new { Error  = result.ErrorMessage ?? "Operation failed." })
+                };
             }
 
-            return Ok(Review);
+            return Ok(result.Data);
                         
         }
 

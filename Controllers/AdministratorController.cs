@@ -7,7 +7,6 @@ using StudyHubAPI.Models.Filter;
 using StudyHubAPI.Services;
 using StudyHubAPI.Utils;
 using System.Security.Claims;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace StudyHubAPI.Controllers
 {
@@ -76,10 +75,10 @@ namespace StudyHubAPI.Controllers
             {
                 return result.Type switch
                 {
-                    ResultType.Ok => Ok(result.Data),
+                    ResultType.NotFound => NotFound(new { Error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." }),
+                    _ => BadRequest(new { Error = result.ErrorMessage })
 
-                    ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
-                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
                 };
             }
 
@@ -143,10 +142,11 @@ namespace StudyHubAPI.Controllers
             {
                 return result.Type switch
                 {
-                    ResultType.BadRequest => BadRequest(new { error = result.ErrorMessage }),
-                    ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
-                    ResultType.Conflict => Conflict(new { error = result.ErrorMessage }),
-                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                    ResultType.BadRequest => BadRequest(new { Error = result.ErrorMessage }),
+                    ResultType.NotFound => NotFound(new { Error = result.ErrorMessage }),
+                    ResultType.Conflict => Conflict(new { Error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." }),
+                     _=> BadRequest(new { Error  = result.ErrorMessage })
                 };
             }
 

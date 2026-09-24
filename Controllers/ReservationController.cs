@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using StudyHubAPI.Models.DTOs;
 using StudyHubAPI.Models.DTOs.Reservation;
@@ -7,6 +6,7 @@ using StudyHubAPI.Models.Filter;
 using StudyHubAPI.Services;
 using StudyHubAPI.Utils;
 using System.Security.Claims;
+
 
 namespace StudyHubAPI.Controllers
 {
@@ -38,13 +38,12 @@ namespace StudyHubAPI.Controllers
             {
                 return result.Type switch
                 {
-                    ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
-                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
-                    _ => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                    ResultType.Failure => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." }),
+                    _ => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." })
                 };
             }
 
-            return CreatedAtRoute("GetReservationByID", new { reservationID = NewReservationID }, NewReservationID);
+            return CreatedAtRoute("GetReservationByID", new { reservationID = result.Data }, result.Data);
 
         }
 
@@ -61,12 +60,11 @@ namespace StudyHubAPI.Controllers
                 return BadRequest("page number and page size can't be zero or less");
             }
 
-
             var ReservationList = await _reservationService.GetAllReservation(filter);
 
             if (ReservationList.TotalCount == 0)
             {
-                return NotFound("No Reservation Was Found");
+                return NotFound(new { Error = "No Reservation Was Found" });
             }
 
             return Ok(ReservationList); 
@@ -82,7 +80,7 @@ namespace StudyHubAPI.Controllers
         {
             if (reservationID <= 0 )
             {
-                return BadRequest("ReservationID can't be zero or less");
+                return BadRequest(new { Error = "ReservationID can't be zero or less" });
             }
 
 
@@ -90,7 +88,7 @@ namespace StudyHubAPI.Controllers
 
             if (Reservation == null)
             {
-                return NotFound("No Reservation Was Found");
+                return NotFound(new { Error = "No Reservation Was Found" });
             }
 
             return Ok(Reservation);
@@ -109,14 +107,18 @@ namespace StudyHubAPI.Controllers
                 return BadRequest("ReservationID can't be zero or less");
             }
 
-            var successed = await _reservationService.CheckIn(reservationID);
+            var result = await _reservationService.CheckIn(reservationID);
 
-            if(successed)
+            if(!result.IsSuccess)
             {
-                return NoContent();
+                return result.Type switch
+                {
+                    ResultType.Failure => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." }),
+                    _ => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." })
+                };
             }
 
-            return BadRequest();
+            return NoContent();
         }
 
         [Authorize(Roles = "Admin")]
@@ -128,24 +130,28 @@ namespace StudyHubAPI.Controllers
         {
             if (reservationID <= 0)
             {
-                return BadRequest("ReservationID can't be zero or less");
+                return BadRequest(new { Error = "ReservationID can't be zero or less" });
             }
 
             var adminIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrEmpty(adminIdClaim) || !int.TryParse(adminIdClaim, out int currentAdminId))
             {
-                return Unauthorized("Admin identity is missing or invalid.");
+                return Unauthorized(new { Error = "Admin identity is missing or invalid." });
             }
 
-            var successed = await _reservationService.CheckOut(reservationID, currentAdminId);
+            var result = await _reservationService.CheckOut(reservationID, currentAdminId);
 
-            if (successed)
+            if (!result.IsSuccess)
             {
-                return NoContent();
+                return result.Type switch
+                {
+                    ResultType.Failure => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." }),
+                    _ => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." })
+                };
             }
 
-            return BadRequest();
+            return NoContent();
         }
 
         [Authorize(Roles = "Admin")]
@@ -157,17 +163,21 @@ namespace StudyHubAPI.Controllers
         {
             if (reservationID <= 0)
             {
-                return BadRequest("ReservationID can't be zero or less");
+                return BadRequest(new { Error = "ReservationID can't be zero or less" });
             }
 
-            var successed = await _reservationService.Cancle(reservationID);
+            var result = await _reservationService.Cancle(reservationID);
 
-            if (successed)
+            if (!result.IsSuccess)
             {
-                return NoContent();
+                return result.Type switch
+                {
+                    ResultType.Failure => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." }),
+                    _ => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." })
+                };
             }
 
-            return BadRequest();
+            return NoContent();
         }
 
 

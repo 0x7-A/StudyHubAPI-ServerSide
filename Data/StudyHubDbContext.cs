@@ -1,37 +1,25 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using StudyHubAPI.Models.Entities;
 using StudyHubAPI.Models.Enums;
 
 namespace StudyHubAPI.Data
 {
-
     public partial class StudyHubDbContext : DbContext
     {
-
         public StudyHubDbContext(DbContextOptions<StudyHubDbContext> options)
             : base(options)
         {
         }
 
         public virtual DbSet<Administrators> Administrators { get; set; }
-
         public virtual DbSet<Customers> Customers { get; set; }
-
         public virtual DbSet<Workspaces> Workspaces { get; set; }
-
         public virtual DbSet<Person> Person { get; set; }
-
         public virtual DbSet<Reservations> Reservations { get; set; }
         public virtual DbSet<Reviews> Reviews { get; set; }
-
         public DbSet<RefreshToken> RefreshTokens { get; set; }
-
         public DbSet<Payments> Payments { get; set; }
-
         public DbSet<WorkspaceImages> WorkspaceImages { get; set; }
-
-
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -73,17 +61,13 @@ namespace StudyHubAPI.Data
                     .IsRequired()
                     .HasColumnType("VARCHAR(255)");
 
-
                 entity.Property(e => e.IsActive)
                     .IsRequired()
                     .HasDefaultValue(true);
 
-
-                // Unique Constraints
                 entity.HasIndex(e => e.Email).IsUnique();
                 entity.HasIndex(e => e.PhoneNumber).IsUnique();
 
-                // Check Constraint: CHK_Person_Role
                 entity.ToTable(t => t.HasCheckConstraint("CHK_Person_Role", "[Role] BETWEEN 1 AND 3"));
             });
 
@@ -93,8 +77,6 @@ namespace StudyHubAPI.Data
             modelBuilder.Entity<Administrators>(entity =>
             {
                 entity.ToTable("Administrators");
-
-                // PK is also the FK to Person(PersonID) in TPT
                 entity.HasBaseType<Person>();
 
                 entity.Property(e => e.HireDate)
@@ -108,8 +90,6 @@ namespace StudyHubAPI.Data
             modelBuilder.Entity<Customers>(entity =>
             {
                 entity.ToTable("Customers");
-
-                // PK is also the FK to Person(PersonID) in TPT
                 entity.HasBaseType<Person>();
 
                 entity.Property(e => e.RegisteredAt)
@@ -141,7 +121,6 @@ namespace StudyHubAPI.Data
                 entity.Property(e => e.MaximumCapacity)
                     .IsRequired();
 
-                // Check Constraints
                 entity.ToTable(t =>
                 {
                     t.HasCheckConstraint("CHK_Workspaces_status", "[WorkspaceStatus] BETWEEN 1 AND 2");
@@ -181,32 +160,27 @@ namespace StudyHubAPI.Data
                     .IsRequired()
                     .HasColumnType("tinyint");
 
-                // Foreign Key: AdminID -> Administrators(PersonID)
                 entity.HasOne(r => r.Admin)
                     .WithMany(a => a.Reservation)
                     .HasForeignKey(r => r.AdminID)
                     .OnDelete(DeleteBehavior.Restrict)
                     .HasConstraintName("FK_Reservations_Administrators");
 
-                // Foreign Key: CustomerID -> Customers(PersonID)
                 entity.HasOne(r => r.Customer)
                     .WithMany(c => c.Reservation)
                     .HasForeignKey(r => r.CustomerID)
                     .OnDelete(DeleteBehavior.Restrict)
                     .HasConstraintName("FK_Reservations_Customers");
 
-                // Foreign Key: WorkspaceID -> Workspaces(WorkspaceID)
                 entity.HasOne(r => r.Workspace)
                     .WithMany(w => w.Reservations)
                     .HasForeignKey(r => r.WorkspaceID)
                     .OnDelete(DeleteBehavior.Restrict)
                     .HasConstraintName("FK_Reservations_Workspaces");
 
-                // Indexes
                 entity.HasIndex(r => r.CustomerID).HasDatabaseName("IX_Reservations_CustomerID");
                 entity.HasIndex(r => r.WorkspaceID).HasDatabaseName("IX_Reservations_WorkspaceID");
 
-                // Check Constraints
                 entity.ToTable(t =>
                 {
                     t.HasCheckConstraint("CHK_Reservations_Status", "[ReservationStatus] BETWEEN 1 AND 6");
@@ -232,22 +206,19 @@ namespace StudyHubAPI.Data
                 entity.Property(e => e.Comment)
                     .HasMaxLength(200);
 
-                // Foreign Key: ReservationID -> Reservations(ReservationID) (1-to-1 or 1-to-0..1)
                 entity.HasOne(rev => rev.Reservation)
-                    .WithMany(r => r.Reviews) // Or .WithOne(res => res.Review) if you added navigation on Reservation
+                    .WithMany(r => r.Reviews)
                     .HasForeignKey(rev => rev.ReservationID)
                     .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("FK_Reviews_Reservations");
 
-                // Index
                 entity.HasIndex(e => e.ReservationID).HasDatabaseName("IX_Reviews_ReservationID");
 
-                // Check Constraint
                 entity.ToTable(t => t.HasCheckConstraint("CHK_Reviews_Rate", "[Rate] BETWEEN 1 AND 5"));
             });
 
             // =============================================
-            // WorkspaceImage Configuration
+            // 7. WORKSPACE IMAGES
             // =============================================
             modelBuilder.Entity<WorkspaceImages>(entity =>
             {
@@ -263,10 +234,8 @@ namespace StudyHubAPI.Data
                       .IsRequired()
                       .HasMaxLength(500);
 
-                // Index
                 entity.HasIndex(e => e.WorkspaceID, "IX_WorkspaceImages_WorkspaceID");
 
-                // Relationship
                 entity.HasOne(e => e.Workspace)
                       .WithMany(w => w.WorkspaceImages)
                       .HasForeignKey(e => e.WorkspaceID)
@@ -275,7 +244,7 @@ namespace StudyHubAPI.Data
             });
 
             // =============================================
-            // Payments Configuration
+            // 8. PAYMENTS
             // =============================================
             modelBuilder.Entity<Payments>(entity =>
             {
@@ -293,7 +262,6 @@ namespace StudyHubAPI.Data
                       .HasColumnType("decimal(10, 2)")
                       .IsRequired();
 
-                // Map Enum properties to tinyint
                 entity.Property(e => e.PaymentStatus)
                       .HasColumnType("tinyint")
                       .HasDefaultValue(PaymentStatus.Pending)
@@ -311,12 +279,10 @@ namespace StudyHubAPI.Data
                 entity.Property(e => e.PaymentDate)
                       .HasDefaultValueSql("SYSUTCDATETIME()");
 
-                // Indexes
                 entity.HasIndex(e => e.CustomerID, "IX_Payments_CustomerID");
                 entity.HasIndex(e => e.AdminID, "IX_Payments_AdminID");
                 entity.HasIndex(e => e.ReservationID, "IX_Payments_ReservationID");
 
-                // Relationships
                 entity.HasOne(e => e.Customer)
                       .WithMany(c => c.Payments)
                       .HasForeignKey(e => e.CustomerID)
@@ -336,12 +302,43 @@ namespace StudyHubAPI.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
+            // =============================================
+            // 9. REFRESH TOKENS
+            // =============================================
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.ToTable("RefreshTokens");
+
+                entity.HasKey(e => e.Id)
+                      .HasName("PK_RefreshTokens");
+
+                entity.Property(e => e.TokenHash)
+                      .IsRequired()
+                      .HasColumnType("nvarchar(max)");
+
+                entity.Property(e => e.ExpiresAt)
+                      .IsRequired()
+                      .HasColumnType("datetime2");
+
+                entity.Property(e => e.RevokedAt)
+                      .HasColumnType("datetime2");
+
+                entity.Property(e => e.CreatedAt)
+                      .IsRequired()
+                      .HasColumnType("datetime2");
+
+                entity.Ignore(e => e.IsActive);
+
+                entity.HasIndex(e => e.PersonID)
+                      .HasDatabaseName("IX_RefreshTokens_PersonID");
 
 
-
-
+                entity.HasOne(e => e.Person)
+                      .WithMany()
+                      .HasForeignKey(e => e.PersonID)
+                      .HasConstraintName("FK_RefreshTokens_Person_PersonID")
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
         }
-
     }
 }
-

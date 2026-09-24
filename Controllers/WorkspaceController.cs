@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using StudyHubAPI.Models.DTOs.Workspace;
 using StudyHubAPI.Services;
+using StudyHubAPI.Utils;
 
 namespace StudyHubAPI.Controllers
 {
@@ -42,7 +41,7 @@ namespace StudyHubAPI.Controllers
 
             if (workspacesList.Count == 0)
             {
-                return NotFound("No Workspace is found");
+                return NotFound(new { Error = "No Workspace is found" } );
             }
 
             return Ok(workspacesList);
@@ -58,18 +57,22 @@ namespace StudyHubAPI.Controllers
         {
             if(workspaceID <= 0)
             {
-                return BadRequest("WorkspaceID can't be zero or less");
+                return BadRequest( new { Error = "WorkspaceID can't be zero or less" } );
             }
 
-            var workspace = await _workspaceService.GetWorkspaceByID(workspaceID);
+            var result = await _workspaceService.GetWorkspaceByID(workspaceID);
 
-            if (workspace == null)
+            if (!result.IsSuccess)
             {
-                return NotFound("No workspace was found");
+                return result.Type switch
+                {
+                    ResultType.NotFound => NotFound(new { Error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." }),
+                      _ => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." })
+                };
             }
 
-            return Ok(workspace);
-
+            return Ok(result.Data);
         }
 
 
@@ -89,15 +92,20 @@ namespace StudyHubAPI.Controllers
 
             if (workspaceID <= 0)
             {
-                return BadRequest("WorkspaceID can not zero or less");
+                return BadRequest(new { Error = "WorkspaceID can not zero or less" });
             }
 
 
-            var succeeded = await _workspaceService.UpdateWorkspace(workspaceID,dto);
+            var result = await _workspaceService.UpdateWorkspace(workspaceID,dto);
 
-            if (!succeeded)
+            if (!result.IsSuccess)
             {
-                return NotFound("Was not found");
+                return result.Type switch
+                {
+                    ResultType.NotFound => NotFound(new { Error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." }),
+                    _ => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." })
+                };
             }
 
 
@@ -115,15 +123,15 @@ namespace StudyHubAPI.Controllers
         {
             if (workspaceID <= 0)
             {
-                return BadRequest("WorkspaceID can not zero or less");
+                return BadRequest(new { Error = "WorkspaceID can not zero or less" }    );
             }
 
 
-            var succeeded = await _workspaceService.SetWorkSpaceToMaintence(workspaceID);
+            var result = await _workspaceService.SetWorkSpaceToMaintence(workspaceID);
 
-            if (!succeeded)
+            if (!result.IsSuccess)
             {
-                return NotFound("Was not found");
+                return BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." });
             }
 
             return NoContent();
@@ -143,11 +151,11 @@ namespace StudyHubAPI.Controllers
             }
 
 
-            var succeeded = await _workspaceService.SetWorkspaceToAvailable(workspaceID);
+            var result = await _workspaceService.SetWorkspaceToAvailable(workspaceID);
 
-            if (!succeeded)
+            if (!result.IsSuccess)
             {
-                return NotFound("Was not found");
+                return BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." });
             }
 
             return NoContent();

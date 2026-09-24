@@ -4,7 +4,6 @@ using StudyHubAPI.Models.Enums;
 using StudyHubAPI.Services;
 using StudyHubAPI.Utils;
 using System.Security.Claims;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace StudyHubAPI.Controllers
 {
@@ -30,7 +29,7 @@ namespace StudyHubAPI.Controllers
                 return result.Type switch
                 {
                     ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
-                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." }),
                     _ => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
                 };
             }
