@@ -15,17 +15,17 @@ namespace StudyHubAPI.Models.DTOs.Person
         [StringLength(50)]
         public string LastName { get; set; } = null!;
 
-        [Required]
-        [EmailAddress]
-        [StringLength(254)]
-        public string Email { get; set; } = null!;
+        //[Required]
+        //[EmailAddress]
+        //[StringLength(254)]
+        //public string Email { get; set; } = null!;
 
         [Required]
         [StringLength(10, MinimumLength = 10)]
         public string PhoneNumber { get; set; } = null!;
 
-        [Required]
-        [StringLength(32, MinimumLength = 8, ErrorMessage = "Password must be between 8 and 32 characters.")]
-        public string Password { get; set; } = null!;
+        //[Required]
+        //[StringLength(32, MinimumLength = 8, ErrorMessage = "Password must be between 8 and 32 characters.")]
+        //public string Password { get; set; } = null!;
     }
 }

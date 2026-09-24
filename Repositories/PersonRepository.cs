@@ -14,7 +14,8 @@ namespace StudyHubAPI.Repositories
         {
             _context = context;
         }
- 
+        // to do  later , update login info to be none / in trancation block
+
         public async Task<bool> SoftDeletePersonByIdAsync(int personId)
         {
             int affectedRows = await _context.Person.Where(p => p.PersonID == personId)
@@ -23,14 +24,15 @@ namespace StudyHubAPI.Repositories
             return affectedRows > 0;
         }
         
+
+
         public async Task<PersonAuthDto?> GetPersonByEmail(string email)
         {
-            return await _context.Person.AsNoTracking().Where(p => p.Email == email)
+            return await _context.LoginInfos.AsNoTracking().Where(p => p.Email == email)
                 .Select(p => new PersonAuthDto
              {
                 PersonID = p.PersonID, Email = p.Email,
-                PasswordHash = p.PasswordHash, FirstName = p.FirstName,
-                LastName = p.LastName, Role = p.Role
+                PasswordHash = p.PasswordHash,Role = p.Role
              }).FirstOrDefaultAsync();
         }
 
@@ -41,17 +43,17 @@ namespace StudyHubAPI.Repositories
 
         public async Task<bool> IsEmailTaken(string email)
         {
-            return await _context.Person.Select(p => p.Email).AnyAsync(e => e == email);
+            return await _context.LoginInfos.Select(p => p.Email).AnyAsync(e => e == email);
         }
 
         public async Task<bool> IsPhoneNumberTaken(string phoneNumber)
         {
-            return await _context.Person.Select(p => p.PhoneNumber).AnyAsync(p => p == phoneNumber);
+            return await _context.LoginInfos.Select(p => p.PhoneNumber).AnyAsync(p => p == phoneNumber);
         }
 
         public async Task<int> ChangeRole(int PersonID, PersonRole newRole)
         {
-            return await _context.Person.Where(p => p.PersonID == PersonID)
+            return await _context.LoginInfos.Where(p => p.PersonID == PersonID)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(p => p.Role, newRole));
         }
 
@@ -64,7 +66,7 @@ namespace StudyHubAPI.Repositories
         public async Task<RefreshToken?> GetRefreshTokenByHashAsync(string tokenHash)
         {
             return await _context.RefreshTokens
-                .Include(rt => rt.Person)
+                .Include(rt => rt.loginfo)
                 .FirstOrDefaultAsync(rt => rt.TokenHash == tokenHash);
         }
 

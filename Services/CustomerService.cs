@@ -20,10 +20,6 @@ namespace StudyHubAPI.Services
 
         public async Task<ServiceResult<int>> AddCustomer(CreateCustomerDto dto)
         {
-            if (await _personRepository.IsEmailTaken(dto.Email))
-            {
-                return ServiceResult<int>.Failure(ResultType.Conflict, "Email is already taken.");   
-            }
             if (await _personRepository.IsPhoneNumberTaken(dto.PhoneNumber))
             {
                 return ServiceResult<int>.Failure(ResultType.Conflict, "Phone number is already taken.");
@@ -34,11 +30,7 @@ namespace StudyHubAPI.Services
                 FirstName = dto.FirstName,
                 MiddleName = dto.MiddleName,
                 LastName = dto.LastName,
-                Email = dto.Email,
-                PhoneNumber = dto.PhoneNumber,
-                PasswordHash = PasswordHasher.HashPassword(dto.Password),
-                Role = PersonRole.Customer
-
+                PhoneNumber = dto.PhoneNumber
             };
 
            return ServiceResult<int>.Success(await _CustomerRepository.AddCustomer(customer), ResultType.Created);
@@ -55,7 +47,7 @@ namespace StudyHubAPI.Services
             }
 
             return ServiceResult<CustomerDetailsDto?>.Success(new CustomerDetailsDto { PersonID = customer.PersonID,  FirstName = customer.FirstName,
-                LastName = customer.LastName, Email = customer.Email, PhoneNumber = customer.PhoneNumber, RegisteredAt = customer.RegisteredAt}, ResultType.Ok);
+                LastName = customer.LastName, PhoneNumber = customer.PhoneNumber, RegisteredAt = customer.RegisteredAt}, ResultType.Ok);
         }
 
 

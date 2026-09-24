@@ -11,6 +11,6 @@
         public bool IsActive => RevokedAt == null && DateTime.UtcNow < ExpiresAt;
 
         public int PersonID { get; set; }
-        public Person Person { get; set; } = null!;
+        public LoginInfo loginfo { get; set; } = null!;
     }
 }

@@ -90,7 +90,6 @@ namespace StudyHubAPI.Services
             return new LoginResponseDto
             {
                 PersonID = person.PersonID,
-                FullName = $"{person.FirstName} {person.LastName}",
                 Role = person.Role,
                 AccessToken = accessToken,
                 RefreshToken = rawRefreshToken
@@ -118,7 +117,7 @@ namespace StudyHubAPI.Services
             await _personRepository.UpdateRefreshTokenAsync(storedToken);
 
             // Generate new Access and Refresh tokens
-            var person = storedToken.Person;
+            var person = storedToken.loginfo;
             var newAccessToken = GenerateJwtToken(person.PersonID, person.Email, person.Role);
             var newRawRefreshToken = GenerateRefreshToken();
 

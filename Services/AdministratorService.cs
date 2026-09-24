@@ -21,10 +21,6 @@ namespace StudyHubAPI.Services
 
         public async Task<ServiceResult<int>> AddAdmin(CreateAdminDto dto)
         {
-            if (await _PersonRepository.IsEmailTaken(dto.Email))
-            {
-                return ServiceResult<int>.Failure(ResultType.Conflict, "Email is already taken.");
-            }
             if (await _PersonRepository.IsPhoneNumberTaken(dto.PhoneNumber))
             {
                 return ServiceResult<int>.Failure(ResultType.Conflict, "Phone number is already taken.");
@@ -35,10 +31,7 @@ namespace StudyHubAPI.Services
                 FirstName = dto.FirstName,
                 MiddleName = dto.MiddleName,
                 LastName = dto.LastName,
-                Email = dto.Email,
                 PhoneNumber = dto.PhoneNumber,
-                PasswordHash =  PasswordHasher.HashPassword(dto.Password),
-                Role = PersonRole.Admin
             };
 
             return  ServiceResult<int>.Success(await _AdministratorRepository.AddAdmin(NewAdmin), ResultType.NoContent);
@@ -58,10 +51,8 @@ namespace StudyHubAPI.Services
                 PersonID = Admin.PersonID,
                 FirstName = Admin.FirstName,
                 LastName = Admin.LastName,
-                Email = Admin.Email,
                 PhoneNumber = Admin.PhoneNumber,
                 HireDate = Admin.HireDate,
-                Role = Admin.Role
             });
         }
 

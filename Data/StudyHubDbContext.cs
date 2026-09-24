@@ -21,6 +21,8 @@ namespace StudyHubAPI.Data
         public DbSet<Payments> Payments { get; set; }
         public DbSet<WorkspaceImages> WorkspaceImages { get; set; }
 
+        public virtual DbSet<LoginInfo> LoginInfos { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -45,30 +47,16 @@ namespace StudyHubAPI.Data
                     .IsRequired()
                     .HasMaxLength(50);
 
-                entity.Property(e => e.Email)
-                    .IsRequired()
-                    .HasColumnType("VARCHAR(254)");
-
                 entity.Property(e => e.PhoneNumber)
                     .IsRequired()
                     .HasColumnType("VARCHAR(10)");
-
-                entity.Property(e => e.Role)
-                    .IsRequired()
-                    .HasColumnType("tinyint");
-
-                entity.Property(e => e.PasswordHash)
-                    .IsRequired()
-                    .HasColumnType("VARCHAR(255)");
 
                 entity.Property(e => e.IsActive)
                     .IsRequired()
                     .HasDefaultValue(true);
 
-                entity.HasIndex(e => e.Email).IsUnique();
                 entity.HasIndex(e => e.PhoneNumber).IsUnique();
 
-                entity.ToTable(t => t.HasCheckConstraint("CHK_Person_Role", "[Role] BETWEEN 1 AND 3"));
             });
 
             // =========================================================
@@ -333,12 +321,70 @@ namespace StudyHubAPI.Data
                       .HasDatabaseName("IX_RefreshTokens_PersonID");
 
 
-                entity.HasOne(e => e.Person)
+                entity.HasOne(e => e.loginfo)
                       .WithMany()
                       .HasForeignKey(e => e.PersonID)
                       .HasConstraintName("FK_RefreshTokens_Person_PersonID")
                       .OnDelete(DeleteBehavior.Cascade);
             });
+
+
+
+            // =============================================
+            // 10. Login Info
+            // =============================================
+
+            modelBuilder.Entity<LoginInfo>(entity =>
+            {
+                entity.ToTable("LoginInfo", t =>
+                {
+                    // Check constraint allowing roles 1 through 4 (includes "None")
+                    t.HasCheckConstraint("CHK_LoginInfo_Role", "[Role] BETWEEN 1 AND 4");
+                });
+
+                // Primary Key
+                entity.HasKey(e => e.LoginID)
+                      .HasName("PK_LoginInfo");
+
+                // Column Properties & Data Types
+                entity.Property(e => e.LoginID)
+                      .ValueGeneratedOnAdd();
+
+                entity.Property(e => e.Email)
+                      .IsRequired()
+                      .HasMaxLength(254)
+                      .HasColumnType("varchar(254)");
+
+                entity.Property(e => e.PasswordHash)
+                      .IsRequired()
+                      .HasMaxLength(255)
+                      .HasColumnType("varchar(255)");
+
+                entity.Property(e => e.Role)
+                      .IsRequired()
+                      .HasColumnType("tinyint");
+
+                // Unique Indexes
+                entity.HasIndex(e => e.PersonID)
+                      .IsUnique()
+                      .HasDatabaseName("UQ_LoginInfo_PersonID");
+
+                entity.HasIndex(e => e.Email)
+                      .IsUnique()
+                      .HasDatabaseName("UQ_LoginInfo_Email");
+
+                // 1-to-1 Relationship with Person (Cascade Delete)
+                entity.HasOne(l => l.Person)
+                      .WithOne(p => p.LoginInfo)
+                      .HasForeignKey<LoginInfo>(l => l.PersonID)
+                      .HasConstraintName("FK_LoginInfo_Person_PersonID")
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+
+
+
+
         }
     }
 }
