@@ -1,12 +1,10 @@
-﻿using static System.Net.Mime.MediaTypeNames;
-using FileSignatures;
-using FileSignatures.Formats;
+﻿using FileSignatures;
 
 namespace StudyHubAPI.Utils
 {
     public class ImageValidator
     {
-        private static readonly IFileFormatInspector Inspector = new FileFormatInspector();
+        private static readonly IFileFormatInspector _Inspector = new FileFormatInspector();
 
         public static async Task<bool> IsValidImageAsync(IFormFile file)
         {
@@ -15,7 +13,7 @@ namespace StudyHubAPI.Utils
 
             await using var stream = file.OpenReadStream();
 
-            return Inspector.DetermineFileFormat(stream) is  FileSignatures.Formats.Image;
+            return _Inspector.DetermineFileFormat(stream) is  FileSignatures.Formats.Image;
         }
     }
 }

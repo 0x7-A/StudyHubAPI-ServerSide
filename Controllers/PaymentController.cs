@@ -31,6 +31,7 @@ namespace StudyHubAPI.Controllers
                 {
                     ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
                     ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                    _ => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
                 };
             }
 

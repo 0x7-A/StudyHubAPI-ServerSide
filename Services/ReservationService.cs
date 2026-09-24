@@ -48,21 +48,21 @@ namespace StudyHubAPI.Services
         }
 
 
-        public async Task<int> AddReservation(CreateReservationDto dto)
+        public async Task<ServiceResult<int>>AddReservation(CreateReservationDto dto)
         {
             if(!await  _paymentRepository.HasUnpaidPayments(dto.CustomerID))
             {
-                return -1;
+                return ServiceResult<int>.Failure(ResultType.BadRequest, "Customers already have an open paymetns");
             }
 
             if (!await _reservationRepository.IsWorkspaceAvailable(dto.WorkspaceID, dto.StartDate, dto.EndDate))
             {
-                return -1;
+                return ServiceResult<int>.Failure(ResultType.BadRequest, $"Workspace is not available in {dto.StartDate} - {dto.EndDate}");
             }
 
             if(!await _reservationRepository.HasAwaitingPaymentReservation(dto.CustomerID))
             {
-                return -1;
+                return ServiceResult<int>.Failure(ResultType.BadRequest, $" ");
             }
          
             var totalPrice = await _GetTotalPrice(dto.WorkspaceID, dto.StartDate, dto.EndDate);
@@ -97,7 +97,7 @@ namespace StudyHubAPI.Services
                
 
                 await transaction.CommitAsync();
-                return reservationID;
+                return  ServiceResult<int>.Success(reservationID, ResultType.NoContent);
             }
             catch
             {
@@ -106,45 +106,49 @@ namespace StudyHubAPI.Services
             }
         }
 
-        public async Task<bool> CheckIn(int reservationId)
+        public async Task<ServiceResult> CheckIn(int reservationId)
         {
             var reservation = await _reservationRepository.GetReservationByIDUnTracked(reservationId);
 
             if(reservation == null)
             {
-                return false;
+                return ServiceResult.Failure(ResultType.NotFound,$"No reservation match{reservationId} " ) ;
             }
 
             // [1] check from the current status. done
             if (reservation.ReservationStatus != ReservationStatus.Confirmed)
             {
-                return false;
+                return ServiceResult.Failure(ResultType.BadRequest,"Can't check in, make sure to follow the process");
             }
 
             // [2] is the time passed or not
             var now = DateTime.UtcNow;
             if (reservation.StartDate > now || reservation.EndDate < now)
             {
-                return false;
+                return ServiceResult.Failure(ResultType.BadRequest,"Reservation already expired");
             }
 
             // [3] upate the status
-            return await _reservationRepository.CheckIn(reservationId,now) > 0;
+            if(await _reservationRepository.CheckIn(reservationId, now) > 0)
+            {
+                return ServiceResult.Success(ResultType.NoContent);
+            }
+            return ServiceResult.Failure(ResultType.Failure, "Could not update the reservation");
         }
 
-        public async Task<bool> CheckOut(int reservationId, int adminID)
+        public async Task<ServiceResult> CheckOut(int reservationId, int adminID)
         {
             var reservation = await _reservationRepository.GetReservationByIDUnTracked(reservationId);
 
             if (reservation == null)
             {
-                return false;
+               return ServiceResult.Failure(ResultType.NotFound, $"No reservation match{reservationId} ");
             }
 
             // [1] check from the current status. done
             if (reservation.ReservationStatus != ReservationStatus.Pending)
             {
-                return false;
+                return ServiceResult.Failure(ResultType.BadRequest, "Can't check in, make sure to follow the process");
             }
 
             var now = DateTime.UtcNow;
@@ -178,11 +182,11 @@ namespace StudyHubAPI.Services
                 if (await _reservationRepository.CheckOut(reservationId, now) > 0)
                 {
                     await transaction.CommitAsync();
-                    return true;
+                    return ServiceResult.Success(ResultType.NoContent);
                 }
 
                 await transaction.RollbackAsync();
-                return false;
+                return ServiceResult.Failure(ResultType.Failure, "Could not update the reservation");
             }
             catch
             {
@@ -192,19 +196,28 @@ namespace StudyHubAPI.Services
       
         }
 
-        public async Task<bool> Cancle(int reservationId)
+        public async Task<ServiceResult> Cancle(int reservationId)
         {
             //id valid
             var reservation = await _reservationRepository.GetReservationByIDUnTracked(reservationId);
 
             if (reservation == null)
             {
-                return false;
+                return ServiceResult.Failure(ResultType.NotFound, $"No reservation match{reservationId} ");
             }
 
-            if(reservation.ReservationStatus != ReservationStatus.Confirmed)
+
+            // to-do 
+            // policy of returing money back.
+
+
+            // mising check if that already pedning 
+            // we should cancle payment  
+
+
+            if(reservation.ReservationStatus != ReservationStatus.Confirmed || reservation.ReservationStatus != ReservationStatus.AwaitingPayment)
             {
-                return false;
+                return ServiceResult.Failure(ResultType.BadRequest, "Can't cancle going on payment");
             }
 
 
@@ -214,10 +227,14 @@ namespace StudyHubAPI.Services
             var allowedStartTime = reservation.StartDate.AddMinutes(SystemSettings.CanCancleBeforeInMinutesInMinus);
             if (allowedStartTime < now)
             {
-                return false;
+                return ServiceResult.Failure(ResultType.BadRequest, "Can't cancle the right now, you passed the specified period Reservation already ");
             }
 
-            return await _reservationRepository.Cancle(reservationId) > 0;
+            if (await _reservationRepository.Cancle(reservationId) > 0)
+            {
+                return ServiceResult.Success(ResultType.NoContent);
+            }
+            return ServiceResult.Failure(ResultType.Failure, "Could not update the reservation");
         }
 
 

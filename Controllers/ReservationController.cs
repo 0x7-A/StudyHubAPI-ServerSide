@@ -5,6 +5,7 @@ using StudyHubAPI.Models.DTOs;
 using StudyHubAPI.Models.DTOs.Reservation;
 using StudyHubAPI.Models.Filter;
 using StudyHubAPI.Services;
+using StudyHubAPI.Utils;
 using System.Security.Claims;
 
 namespace StudyHubAPI.Controllers
@@ -31,11 +32,16 @@ namespace StudyHubAPI.Controllers
         public async Task<ActionResult<int>> AddReservation(CreateReservationDto dto)
         {
 
-            var NewReservationID = await _reservationService.AddReservation(dto);
+            var result = await _reservationService.AddReservation(dto);
 
-            if(NewReservationID == -1)
+            if (!result.IsSuccess)
             {
-                return BadRequest("Workspace is not available...");
+                return result.Type switch
+                {
+                    ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                    _ => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                };
             }
 
             return CreatedAtRoute("GetReservationByID", new { reservationID = NewReservationID }, NewReservationID);
