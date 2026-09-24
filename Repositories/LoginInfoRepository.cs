@@ -27,10 +27,20 @@ namespace StudyHubAPI.Repositories
             return await _context.LoginInfos.Select(p => p.Email).AnyAsync(e => e == email);
         }
 
+        public async Task<LoginInfo?> GetLoginByPersonID(int PersonID)
+        {
+            return await _context.LoginInfos.SingleOrDefaultAsync(p => p.PersonID == PersonID);
+        }
 
+        public async Task<int> SaveChangesAsync(LoginInfo loginInfo)
+        {
+            return await _context.SaveChangesAsync();
+        }
 
-
-
+        public async Task<int> PromptToAdmin(int PersonID)
+        {
+            return await _context.LoginInfos.Where(l => l.PersonID == PersonID).ExecuteUpdateAsync(setters => setters.SetProperty(p => p.Role, Models.Enums.PersonRole.Admin));
+        }
 
     }
 }

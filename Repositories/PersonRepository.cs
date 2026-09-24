@@ -25,7 +25,6 @@ namespace StudyHubAPI.Repositories
         }
         
 
-
         public async Task<PersonAuthDto?> GetPersonByEmail(string email)
         {
             return await _context.LoginInfos.AsNoTracking().Where(p => p.Email == email)
@@ -41,10 +40,6 @@ namespace StudyHubAPI.Repositories
             return await _context.SaveChangesAsync();
         }
 
-        public async Task<bool> IsEmailTaken(string email)
-        {
-            return await _context.LoginInfos.Select(p => p.Email).AnyAsync(e => e == email);
-        }
 
         public async Task<bool> IsPhoneNumberTaken(string phoneNumber)
         {

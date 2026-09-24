@@ -7,19 +7,19 @@ using StudyHubAPI.Utils;
 
 namespace StudyHubAPI.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [Route("api/LoginInfo")]
     [ApiController]
     public class LoginInfoController : ControllerBase
     {
-        private readonly LoginInfService _loginInfService;
+        private readonly LoginInfoService _loginInfService;
 
-        public LoginInfoController(LoginInfService loginInfService)
+        public LoginInfoController(LoginInfoService loginInfService)
         {
             _loginInfService = loginInfService;
         }
 
-
+        [Authorize]
         [HttpPost("Add", Name = "AddLoginInfo")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -33,17 +33,62 @@ namespace StudyHubAPI.Controllers
             {
                 return result.Type switch
                 {
-                    ResultType.Conflict => Conflict(new { error = result.ErrorMessage }),
-                    _  => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                    ResultType.Conflict => Conflict(new { Error = result.ErrorMessage }),
+                    _  => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." })
                 };
             }
 
             return Ok(result.Data);
         }
 
+        [HttpPatch("Update/{int:PersonID}", Name = "UpdateLoginInfoByPersonID")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public async Task<ActionResult> UpdateLoginInfoByPersonID(int PersonID, UpdateLoginInfoDto dto)
+        {
+            if(PersonID <0)
+            {
+                return BadRequest(new { Error = "PersonID can't be zero or less " });
+            }
 
 
 
+            var result = await _loginInfService.UpdateLoginInfo(PersonID, dto);
+
+
+            if (!result.IsSuccess)
+            {
+                return result.Type switch
+                {
+                    ResultType.Conflict => Conflict(new { Error = result.ErrorMessage }),
+                    _ => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." })
+                };
+            }
+
+            return NoContent();
+        }
+
+        [HttpPatch("PromptToAdmin/{int:PersonID}", Name = "PromptToAdmin")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult> PromptToAdmin(int PersonID)
+        {
+            if (PersonID < 0)
+            {
+                return BadRequest(new { Error = "PersonID can't be zero or less " });
+            }
+
+            var result = await _loginInfService.PromptToAdmin(PersonID);
+
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(new { error = result.ErrorMessage ?? "Operation failed." });
+            }
+
+            return NoContent();
+        }
 
 
     }

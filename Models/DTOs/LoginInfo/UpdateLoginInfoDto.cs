@@ -4,6 +4,7 @@ namespace StudyHubAPI.Models.DTOs.LoginInfo
 {
     public class UpdateLoginInfoDto
     {
+
         [EmailAddress]
         [StringLength(254)]
         public string Email { get; set; } = null!;

@@ -103,12 +103,5 @@ namespace StudyHubAPI.Services
            return _PersonRepository.SoftDeletePersonByIdAsync(personID);
         }
 
-
-        // maybe I will need it later. 
-        //private async Task<bool> PromoteToAdmin(int PersonID)
-        //{
-        //    var result = await _PersonRepository.ChangeRole(PersonID, 2);
-        //    return result > 0;
-        //
     }
 }
