@@ -68,11 +68,5 @@ namespace StudyHubAPI.Repositories
             return  NewAdmin.PersonID;
         }
 
-        public async Task<int> DeleteAdmin(int AdminID)
-        {
-           return await _context.Administrators.Where(a => a.PersonID == AdminID).ExecuteDeleteAsync();
-        }
-
-
     }
 }

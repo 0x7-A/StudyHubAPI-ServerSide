@@ -99,10 +99,36 @@ namespace StudyHubAPI.Services
         }
 
 
-        public Task<bool> DeleteCustomerByID(int personID)
+        public async Task<ServiceResult> DeleteCustomerByID(int personID)
         {
-            return _personRepository.SoftDeletePersonByIdAsync(personID);
+            using var transaction = await _personRepository.BeginTransactionAsync();
+
+            try
+            {
+                var isActiveResult = await _personRepository.ChangeIsActive(personID);
+
+
+                var changeRoleResult = await _personRepository.ChangeRole(personID, PersonRole.None);
+
+                if (isActiveResult == 0)
+                {
+                    await transaction.RollbackAsync();
+                    return ServiceResult.Failure(ResultType.Failure, "Admin not found or no changes made.");
+                }
+
+                // Commit all changes if everything succeeds
+                await transaction.CommitAsync();
+
+                return ServiceResult.Success(ResultType.NoContent);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return ServiceResult.Failure(ResultType.Failure, $"An error occurred while deleting the admin: {ex.Message}");
+            }
+
         }
+
 
     }
 }

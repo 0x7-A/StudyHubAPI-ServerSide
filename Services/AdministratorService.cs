@@ -1,4 +1,5 @@
-﻿using StudyHubAPI.Models.DTOs;
+﻿using Microsoft.EntityFrameworkCore;
+using StudyHubAPI.Models.DTOs;
 using StudyHubAPI.Models.DTOs.Admin;
 using StudyHubAPI.Models.Entities;
 using StudyHubAPI.Models.Enums;
@@ -98,9 +99,34 @@ namespace StudyHubAPI.Services
         }
 
 
-        public Task<bool> DeleteAdminByID(int personID)
+        public async Task<ServiceResult> DeleteAdminByID(int personID)
         {
-           return _PersonRepository.SoftDeletePersonByIdAsync(personID);
+            using var transaction = await _PersonRepository.BeginTransactionAsync();
+
+            try
+            {
+                var isActiveResult = await _PersonRepository.ChangeIsActive(personID);
+
+                
+                var changeRoleResult = await _PersonRepository.ChangeRole(personID, PersonRole.None);
+
+                if (isActiveResult == 0)
+                {
+                    await transaction.RollbackAsync();
+                    return ServiceResult.Failure(ResultType.Failure ,"Admin not found or no changes made.");
+                }
+
+                // Commit all changes if everything succeeds
+                await transaction.CommitAsync();
+
+                return ServiceResult.Success(ResultType.NoContent);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return ServiceResult.Failure(ResultType.Failure,$"An error occurred while deleting the admin: {ex.Message}");
+            }
+
         }
 
     }

@@ -147,10 +147,10 @@ namespace StudyHubAPI.Controllers
             {
                 return result.Type switch
                 {
-                    ResultType.BadRequest => BadRequest(new { error = result.ErrorMessage }),
-                    ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
-                    ResultType.Conflict => Conflict(new { error = result.ErrorMessage }),
-                    _ => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                    ResultType.BadRequest => BadRequest(new { Errors = result.ErrorMessage }),
+                    ResultType.NotFound => NotFound(new { Error = result.ErrorMessage }),
+                    ResultType.Conflict => Conflict(new { Error = result.ErrorMessage }),
+                    _ => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." })
                 };
             }
 
@@ -170,14 +170,18 @@ namespace StudyHubAPI.Controllers
                 return BadRequest(new { Error = "personID can't be zero or less" });
             }
 
-            var Succseeded = await _customerService.DeleteCustomerByID(Id);
+            var result = await _customerService.DeleteCustomerByID(Id);
 
-            if (Succseeded)
+            if (!result.IsSuccess)
             {
-                return NoContent();
+                return result.Type switch
+                {
+                    ResultType.NotFound => NotFound(new { Error = result.ErrorMessage }),
+                    _ => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." })
+                };
             }
 
-            return NotFound();
+            return NoContent();
         }
 
 

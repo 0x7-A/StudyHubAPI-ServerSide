@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using StudyHubAPI.Models.DTOs.LoginInfo;
 using StudyHubAPI.Services;
@@ -41,7 +40,7 @@ namespace StudyHubAPI.Controllers
             return Ok(result.Data);
         }
 
-        [HttpPatch("Update/{int:PersonID}", Name = "UpdateLoginInfoByPersonID")]
+        [HttpPatch("Update/{PersonID:int}", Name = "UpdateLoginInfoByPersonID")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -69,7 +68,7 @@ namespace StudyHubAPI.Controllers
             return NoContent();
         }
 
-        [HttpPatch("PromptToAdmin/{int:PersonID}", Name = "PromptToAdmin")]
+        [HttpPatch("PromptToAdmin/{PersonID:int}", Name = "PromptToAdmin")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult> PromptToAdmin(int PersonID)

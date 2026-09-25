@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using StudyHubAPI.Data;
+using StudyHubAPI.Models.DTOs.Person;
 using StudyHubAPI.Models.Entities;
+using StudyHubAPI.Models.Enums;
 
 namespace StudyHubAPI.Repositories
 {
@@ -14,7 +16,17 @@ namespace StudyHubAPI.Repositories
             _context = context;
         }
 
-
+        public async Task<PersonAuthDto?> GetLoginInfoByEmail(string email)
+        {
+            return await _context.LoginInfos.AsNoTracking().Where(p => p.Email == email && p.Role != PersonRole.None)
+                .Select(p => new PersonAuthDto
+                {
+                    PersonID = p.PersonID,
+                    Email = p.Email,
+                    PasswordHash = p.PasswordHash,
+                    Role = p.Role
+                }).FirstOrDefaultAsync();
+        }
         public async Task<int> AddLoginInfo(LoginInfo loginInfo)
         {
             _context.Add(loginInfo);
@@ -39,7 +51,12 @@ namespace StudyHubAPI.Repositories
 
         public async Task<int> PromptToAdmin(int PersonID)
         {
-            return await _context.LoginInfos.Where(l => l.PersonID == PersonID).ExecuteUpdateAsync(setters => setters.SetProperty(p => p.Role, Models.Enums.PersonRole.Admin));
+            return await _context.LoginInfos.Where(l => l.PersonID == PersonID).ExecuteUpdateAsync(setters => setters.SetProperty(p => p.Role, PersonRole.Admin));
+        }
+
+        public async Task<int> ResetPersonRoleToNone(int PersonID)
+        {
+            return await _context.LoginInfos.Where(l => l.PersonID == PersonID).ExecuteUpdateAsync(setters => setters.SetProperty(p => p.Role, PersonRole.None));
         }
 
     }

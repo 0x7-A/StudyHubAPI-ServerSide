@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using StudyHubAPI.Models.DTOs.Payment;
 using StudyHubAPI.Models.Enums;
 using StudyHubAPI.Services;
@@ -7,6 +8,7 @@ using System.Security.Claims;
 
 namespace StudyHubAPI.Controllers
 {
+    [Authorize]
     [Route("api/Payment")]
     [ApiController]
     public class PaymentController : ControllerBase
@@ -58,7 +60,7 @@ namespace StudyHubAPI.Controllers
                 {
                     ResultType.BadRequest => BadRequest(new { error = result.ErrorMessage }),
                     ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
-                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                    _ => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
                 };
             }
 
@@ -100,7 +102,7 @@ namespace StudyHubAPI.Controllers
                 {
                     ResultType.BadRequest => BadRequest(new { error = result.ErrorMessage }),
                     ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
-                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
+                    _ => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." })
                 };
             }
 

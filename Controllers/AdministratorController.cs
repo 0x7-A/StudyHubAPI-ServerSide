@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using StudyHubAPI.Models.DTOs;
 using StudyHubAPI.Models.DTOs.Admin;
@@ -166,15 +167,19 @@ namespace StudyHubAPI.Controllers
                 return BadRequest(new { Error = "personID can't be zero or less" });
             }
 
-            var Succseeded = await _administratorService.DeleteAdminByID(Id);
+            var result = await _administratorService.DeleteAdminByID(Id);
 
 
-            if (Succseeded)
+            if (!result.IsSuccess)
             {
-                return NoContent();
+                return result.Type switch
+                {
+                    ResultType.NotFound => NotFound(new { Error = result.ErrorMessage }),
+                    _ => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." })
+                };
             }
 
-            return NotFound();
+            return NoContent();
         }
 
 

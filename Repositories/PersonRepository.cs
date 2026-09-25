@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using StudyHubAPI.Data;
 using StudyHubAPI.Models.DTOs.Person;
 using StudyHubAPI.Models.Entities;
@@ -14,26 +15,6 @@ namespace StudyHubAPI.Repositories
         {
             _context = context;
         }
-        // to do  later , update login info to be none / in trancation block
-
-        public async Task<bool> SoftDeletePersonByIdAsync(int personId)
-        {
-            int affectedRows = await _context.Person.Where(p => p.PersonID == personId)
-                .ExecuteUpdateAsync(setters => setters.SetProperty(p => p.IsActive, false));
-
-            return affectedRows > 0;
-        }
-        
-
-        public async Task<PersonAuthDto?> GetPersonByEmail(string email)
-        {
-            return await _context.LoginInfos.AsNoTracking().Where(p => p.Email == email)
-                .Select(p => new PersonAuthDto
-             {
-                PersonID = p.PersonID, Email = p.Email,
-                PasswordHash = p.PasswordHash,Role = p.Role
-             }).FirstOrDefaultAsync();
-        }
 
         public async Task<int> SaveChangeAsync()
         {
@@ -46,11 +27,21 @@ namespace StudyHubAPI.Repositories
             return await _context.LoginInfos.Select(p => p.PhoneNumber).AnyAsync(p => p == phoneNumber);
         }
 
+        public async Task<int> ChangeIsActive(int PersonID)
+        {
+            //not every person has login info so we can't udpdate them in one step.
+            return  await _context.Person
+            .Where(p => p.PersonID == PersonID)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(p => p.IsActive, false));
+        }
+
         public async Task<int> ChangeRole(int PersonID, PersonRole newRole)
         {
-            return await _context.LoginInfos.Where(p => p.PersonID == PersonID)
-                .ExecuteUpdateAsync(setters => setters.SetProperty(p => p.Role, newRole));
+            return await _context.LoginInfos
+            .Where(p => p.PersonID == PersonID)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(p => p.Role, newRole));
         }
+
 
         public async Task AddRefreshTokenAsync(RefreshToken refreshToken)
         {
@@ -70,6 +61,13 @@ namespace StudyHubAPI.Repositories
             _context.RefreshTokens.Update(refreshToken);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
+        {
+          return  await _context.Database.BeginTransactionAsync();
+        }
+
+
 
     }
 }

@@ -14,12 +14,15 @@ namespace StudyHubAPI.Services
     public class AuthService
     {
         private readonly PersonRepository _personRepository;
+        private readonly LoginInfoRepository _loginInfoRepository;
+
         private readonly IConfiguration _configuration;
 
-        public AuthService(PersonRepository personRepository, IConfiguration configuration)
+        public AuthService(PersonRepository personRepository, IConfiguration configuration, LoginInfoRepository loginInfoRepository)
         {
             _personRepository = personRepository;
             _configuration = configuration;
+            _loginInfoRepository = loginInfoRepository;
         }
 
         private static string GenerateRefreshToken()
@@ -63,7 +66,7 @@ namespace StudyHubAPI.Services
 
         public async Task<LoginResponseDto?> Login(LoginRequestDto request)
         {
-            var person = await _personRepository.GetPersonByEmail(request.Email);
+            var person = await _loginInfoRepository.GetLoginInfoByEmail(request.Email);
             if (person == null || !PasswordHasher.VerifyPassword(request.Password, person.PasswordHash))
             {
                 return null;
