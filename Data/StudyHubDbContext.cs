@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StudyHubAPI.Models.Entities;
 using StudyHubAPI.Models.Enums;
+using System.Diagnostics.Metrics;
 
 namespace StudyHubAPI.Data
 {
@@ -22,6 +23,7 @@ namespace StudyHubAPI.Data
         public DbSet<WorkspaceImages> WorkspaceImages { get; set; }
 
         public virtual DbSet<LoginInfo> LoginInfos { get; set; }
+        public virtual DbSet<Countries> Countries { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -70,6 +72,16 @@ namespace StudyHubAPI.Data
                 entity.Property(e => e.HireDate)
                     .HasColumnType("DATE")
                     .HasDefaultValueSql("CAST(GETDATE() AS DATE)");
+
+                entity.Property(a => a.CountryID)
+                      .IsRequired();
+
+                entity.HasOne(a => a.Country)
+                      .WithMany(c => c.Administrators)
+                      .HasForeignKey(a => a.CountryID)
+                      .HasConstraintName("FK_Administrators_Countries")
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
             // =========================================================
@@ -381,6 +393,30 @@ namespace StudyHubAPI.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
+
+            // =============================================
+            // 11. Countries
+            // =============================================
+
+            modelBuilder.Entity<Countries>(entity =>
+            {
+                // Table mapping
+                entity.ToTable("Countries");
+
+                // Primary Key
+                entity.HasKey(c => c.CountryID);
+
+                // Identity column: IDENTITY(1,1)
+                entity.Property(c => c.CountryID)
+                      .ValueGeneratedOnAdd();
+
+                // Column: CountryName varchar(20) NOT NULL
+                entity.Property(c => c.CountryName)
+                      .HasColumnName("CountryName")
+                      .HasMaxLength(20)
+                      .IsUnicode(false) // maps to varchar instead of nvarchar
+                      .IsRequired();
+            });
 
 
 

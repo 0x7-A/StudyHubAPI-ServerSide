@@ -158,6 +158,7 @@ builder.Services.AddScoped<WorkspaceRepository>();
 builder.Services.AddScoped<PaymentRepository>();
 builder.Services.AddScoped<WorkspaceImagesRepository>();
 builder.Services.AddScoped<LoginInfoRepository>();
+builder.Services.AddScoped<CountryRepository>();
 
 
 // =========================================================
@@ -172,6 +173,7 @@ builder.Services.AddScoped<WorkspaceService>();
 builder.Services.AddScoped<PaymentService>();
 builder.Services.AddScoped<WorkspaceImagesService>();
 builder.Services.AddScoped<LoginInfoService>();
+builder.Services.AddScoped<CountryService>();
 
 
 builder.Services.AddCors(options =>

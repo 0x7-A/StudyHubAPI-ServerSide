@@ -27,12 +27,19 @@ namespace StudyHubAPI.Services
                 return ServiceResult<int>.Failure(ResultType.Conflict, "Phone number is already taken.");
             }
 
+            if(dto.DateOfBirth < new DateOnly(1926, 1, 1))
+            {
+                return ServiceResult<int>.Failure(ResultType.BadRequest, "Invalid date of birth.");
+            }
+
             var NewAdmin = new Administrators
             {
                 FirstName = dto.FirstName,
                 MiddleName = dto.MiddleName,
                 LastName = dto.LastName,
                 PhoneNumber = dto.PhoneNumber,
+                DateOfBirth = dto.DateOfBirth,
+                CountryID = dto.CountryID
             };
 
             return  ServiceResult<int>.Success(await _AdministratorRepository.AddAdmin(NewAdmin), ResultType.NoContent);
