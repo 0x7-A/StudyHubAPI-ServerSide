@@ -21,6 +21,8 @@ namespace StudyHubAPI.Models.Entities
         public virtual Customers Customer { get; set; } = null!;
         public virtual Administrators Administrator { get; set; } = null!;
         public virtual Reservations Reservation { get; set; } = null!;
+
+        public Damage? Damages { get; set; } 
     }
 
 }

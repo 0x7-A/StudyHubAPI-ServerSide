@@ -10,7 +10,7 @@
 
         public int ReservationID { get; set; }
 
-        public virtual Reservations Reservation { get; set; } = null!;
+        public Reservations Reservation { get; set; } = null!;
 
     }
 }

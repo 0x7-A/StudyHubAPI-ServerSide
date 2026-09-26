@@ -11,11 +11,7 @@ namespace StudyHubAPI.Models.Entities
 
         // 1 = Customer  2 = Administrator  3 = SuperAdmin
         public PersonRole Role { get; set; }
-
         public string PasswordHash { get; set; } = null!;
-
-
-
         public Person Person { get; set; } = null!;
     }
 }

@@ -18,12 +18,12 @@ namespace StudyHubAPI.Models.Entities
         public DateTime? ActualEndDate { get; set; }
         // 1=Confirmed, 2=Pending, 3=Completed, 4=Cancelled, 5=NoShow
         public ReservationStatus ReservationStatus { get; set; }
-        public virtual Administrators Admin { get; set; } = null!;
-        public virtual Customers Customer { get; set; } = null!;
-        public virtual Workspaces Workspace { get; set; } = null!;
+        public Administrators Admin { get; set; } = null!;
+        public Customers Customer { get; set; } = null!;
+        public Workspaces Workspace { get; set; } = null!;
 
-        public virtual ICollection<Reviews> Reviews { get; set; } = new HashSet<Reviews>();
-        public virtual ICollection<Payments> Payments { get; set; } = new HashSet<Payments>();
+        public ICollection<Reviews> Reviews { get; set; } = new HashSet<Reviews>();
+        public ICollection<Payments> Payments { get; set; } = new HashSet<Payments>();
 
     }
 }

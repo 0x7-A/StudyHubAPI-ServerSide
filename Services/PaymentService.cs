@@ -89,23 +89,15 @@ namespace StudyHubAPI.Services
         }
 
 
-        private async Task<decimal> _GetPrice(int ReservationID, PaymentReason reason)
+        private async Task<decimal> _GetPrice(int ReservationID, Reservations Reservation, PaymentReason reason)
         {
-            var Reservation = await _ReservationRepository.GetReservationByIDUnTracked(ReservationID);
-            // do a speical one with rate
-
-            if (Reservation == null)
-            {
-                return -1;
-            }
-
             switch (reason)
             {
                 case PaymentReason.Basic:
                     return await _GetTotalPrice(Reservation.WorkspaceID, Reservation.StartDate, Reservation.EndDate);
                 case PaymentReason.Overstay:
                     // calculting in reservation
-                case PaymentReason.Fine:
+                case PaymentReason.Damage:
                     // do the logic later here 
 
                     break;
@@ -132,7 +124,28 @@ namespace StudyHubAPI.Services
         {
             // initalliay with payment staus = pending after calcukating the price and
             // adding the payment. 
-            decimal price = await _GetPrice(dto.ReservationID, dto.PaymentReason);
+
+            var Reservation = await _ReservationRepository.GetReservationByIDUnTracked(dto.ReservationID);
+            if (Reservation == null)
+            {
+                return ServiceResult<int>.Failure(ResultType.NotFound, "Reservation not found");
+            }
+            
+            if(dto.PaymentReason == PaymentReason.Damage &&  (Reservation.ReservationStatus != ReservationStatus.Completed  
+                || Reservation.ReservationStatus != ReservationStatus.Pending))
+            {
+                return ServiceResult<int>.Failure(ResultType.BadRequest, "Cannot add fine for this reservation, since it is not pending or completed");
+            }
+
+            if (dto.PaymentReason == PaymentReason.Overstay && Reservation.ReservationStatus != ReservationStatus.Completed)
+            {
+                return ServiceResult<int>.Failure(ResultType.BadRequest, "Cannot add fine for this reservation, since it is not pending or completed");
+            }
+
+
+
+
+           decimal price = await _GetPrice(dto.ReservationID, Reservation, dto.PaymentReason);
 
            if (price == -1)
            {

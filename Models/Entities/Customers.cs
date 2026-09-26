@@ -4,9 +4,9 @@
     {
        
         public DateOnly RegisteredAt { get; set; }
-        public virtual ICollection<Reservations> Reservation { get; set; }
+        public ICollection<Reservations> Reservation { get; set; }
             = new List<Reservations>();
-        public virtual ICollection<Payments> Payments { get; set; }
+        public ICollection<Payments> Payments { get; set; }
             = new HashSet<Payments>();
 
     }

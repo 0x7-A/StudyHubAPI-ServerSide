@@ -4,6 +4,6 @@
     {
       Basic = 1,
       Overstay = 2,
-      Fine = 3
+      Damage = 3
     }
 }

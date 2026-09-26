@@ -11,9 +11,9 @@
             public decimal HourlyRate { get; set; }
 
             public int MaximumCapacity { get; set; }
-            public virtual ICollection<Reservations> Reservations { get; set; }
+            public ICollection<Reservations> Reservations { get; set; }
                 = new HashSet<Reservations>();
-            public virtual ICollection<WorkspaceImages> WorkspaceImages { get; set; }
+            public ICollection<WorkspaceImages> WorkspaceImages { get; set; }
                 = new HashSet<WorkspaceImages>();
      }
     

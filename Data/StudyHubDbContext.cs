@@ -21,9 +21,9 @@ namespace StudyHubAPI.Data
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<Payments> Payments { get; set; }
         public DbSet<WorkspaceImages> WorkspaceImages { get; set; }
-
         public virtual DbSet<LoginInfo> LoginInfos { get; set; }
         public virtual DbSet<Countries> Countries { get; set; }
+        public virtual DbSet<Damage> Damages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -418,8 +418,29 @@ namespace StudyHubAPI.Data
                       .IsRequired();
             });
 
+            // =============================================
+            // 11. Damages
+            // =============================================
 
 
+            modelBuilder.Entity<Damage>(entity =>
+            {
+                entity.ToTable("Damages");
+
+                entity.HasKey(d => d.DamageId).HasName("PK_Damages");
+
+                entity.Property(d => d.DamageId).HasColumnName("DamageID");
+                entity.Property(d => d.PaymentId).HasColumnName("PaymentID");
+
+                entity.Property(d => d.Notes).HasMaxLength(500);
+                entity.Property(d => d.ImagePath).HasMaxLength(255);
+
+                entity.HasOne(d => d.Payment)
+                      .WithOne(p => p.Damages)
+                      .HasForeignKey<Damage>(d => d.PaymentId)
+                      .HasConstraintName("FK_Damages_Payments")
+                      .OnDelete(DeleteBehavior.ClientSetNull);
+            });
 
         }
     }

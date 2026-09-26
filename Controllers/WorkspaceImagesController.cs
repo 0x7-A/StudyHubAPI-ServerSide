@@ -51,8 +51,8 @@ namespace StudyHubAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult> GetImagesByWorkspace(int workspaceId)
         {
-            var baseUrl = $"{Request.Scheme}://{Request.Host}";
-            var images = await _workspaceImagesService.GetWorkspaceImagesAsync(workspaceId, baseUrl);
+            var images = await _workspaceImagesService.GetWorkspaceImagesAsync
+                (workspaceId, $"{Request.Scheme}://{Request.Host}");
 
             if (images is null)
                 return NotFound(new { Error = $"Workspace with ID {workspaceId} does not exist." });
@@ -79,9 +79,9 @@ namespace StudyHubAPI.Controllers
             {
                 return result.Type switch
                 {
-                    ResultType.BadRequest => BadRequest(new { error = result.ErrorMessage }),
-                    ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
-                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." }),
+                    ResultType.BadRequest => BadRequest(new { Error = result.ErrorMessage }),
+                    ResultType.NotFound => NotFound(new { Error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { Error    = result.ErrorMessage ?? "Operation failed." }),
                     _ => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." })
                 };
             }
@@ -99,7 +99,7 @@ namespace StudyHubAPI.Controllers
         {
             if (Id <= 0)
             {
-                return BadRequest(new { error = "Image ID can't be zero or less" });
+                return BadRequest(new { Error = "Image ID can't be zero or less" });
             }
 
             var result = await _workspaceImagesService.DeleteWorkspaceImage(Id);
@@ -108,9 +108,9 @@ namespace StudyHubAPI.Controllers
             {
                 return result.Type switch
                 {
-                    ResultType.BadRequest => BadRequest(new { error = result.ErrorMessage }),
-                    ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
-                    ResultType.Failure => BadRequest(new { error = result.ErrorMessage ?? "Operation failed." }),
+                    ResultType.BadRequest => BadRequest(new { Error = result.ErrorMessage }),
+                    ResultType.NotFound => NotFound(new { Error = result.ErrorMessage }),
+                    ResultType.Failure => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." }),
                     _ => BadRequest(new { Error = result.ErrorMessage ?? "Operation failed." })
                 };
             }
