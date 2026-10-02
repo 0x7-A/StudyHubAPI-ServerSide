@@ -88,7 +88,6 @@ namespace StudyHubAPI.Services
                     ReservationID = reservationID,
                     CustomerID = dto.CustomerID,
                     AdminID = dto.AdminID,
-                    TotalPrice = totalPrice,
                     PaymentStatus = PaymentStatus.Pending,
                     PaymentReason = PaymentReason.Basic
                 };
@@ -173,8 +172,7 @@ namespace StudyHubAPI.Services
                             PaymentReason = PaymentReason.Overstay,
                             CustomerID = reservation.CustomerID,
                             PaymentStatus = PaymentStatus.Pending,
-                            AdminID = adminID,
-                            TotalPrice = totalMinutes * SystemSettings.PricePerMinuteOverstay
+                            AdminID = adminID
                         });
                     }
                 }

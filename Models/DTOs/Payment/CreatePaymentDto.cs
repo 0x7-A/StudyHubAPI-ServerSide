@@ -1,4 +1,5 @@
 ﻿using StudyHubAPI.Models.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace StudyHubAPI.Models.DTOs.Payment
 {
@@ -8,7 +9,8 @@ namespace StudyHubAPI.Models.DTOs.Payment
         public int CustomerID { get; set; }
         public int AdminID { get; set; }
         public int ReservationID { get; set; }
-        // Mapped Enums
+
+        [EnumDataType(typeof(PaymentReason))]
         public PaymentReason PaymentReason { get; set; }
     }
 }

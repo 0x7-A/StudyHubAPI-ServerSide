@@ -25,6 +25,8 @@ namespace StudyHubAPI.Data
         public virtual DbSet<Countries> Countries { get; set; }
         public virtual DbSet<Damage> Damages { get; set; }
 
+        public DbSet<Offers> Offers { get; set; }
+        public DbSet<Invoices> Invoices { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -250,17 +252,12 @@ namespace StudyHubAPI.Data
             {
                 entity.ToTable("Payments", t =>
                 {
-                    t.HasCheckConstraint("CK_Payments_TotalPrice", "[TotalPrice] >= 0");
                     t.HasCheckConstraint("CK_Payments_PaymentStatus", "[PaymentStatus] IN (1, 2, 3)");
                     t.HasCheckConstraint("CK_Payments_PaymentReason", "[PaymentReason] IN (1, 2, 3)");
                 });
 
                 entity.HasKey(e => e.PaymentID)
                       .HasName("PK_Payments_PaymentID");
-
-                entity.Property(e => e.TotalPrice)
-                      .HasColumnType("decimal(10, 2)")
-                      .IsRequired();
 
                 entity.Property(e => e.PaymentStatus)
                       .HasColumnType("tinyint")
@@ -441,6 +438,62 @@ namespace StudyHubAPI.Data
                       .HasConstraintName("FK_Damages_Payments")
                       .OnDelete(DeleteBehavior.ClientSetNull);
             });
+
+            // ==========================================
+            // 12. Offers Entity Configuration
+            // ==========================================
+            modelBuilder.Entity<Offers>(entity =>
+            {
+                entity.HasKey(e => e.OfferID);
+
+                entity.Property(e => e.OfferName)
+                    .IsRequired()
+                    .HasMaxLength(30);
+
+                entity.Property(e => e.OfferPercentage)
+                    .HasPrecision(5, 2);
+
+                // Non-negative CHECK Constraints (SQL Server 2019+ / EF Core 7.0+)
+                entity.ToTable(t =>
+                {
+                    t.HasCheckConstraint("CK_Offers_OfferPercentage", "[OfferPercentage] >= 0");
+                    t.HasCheckConstraint("CK_Offers_MaxDiscount", "[MaximumDiscountAmount] >= 0 OR [MaximumDiscountAmount] IS NULL");
+                    t.HasCheckConstraint("CK_Offers_MinDiscount", "[MinimumDiscountAmount] >= 0 OR [MinimumDiscountAmount] IS NULL");
+                });
+            });
+
+            modelBuilder.Entity<Invoices>(entity =>
+            {
+                entity.HasKey(e => e.InvoiceID);
+
+                entity.Property(e => e.OriginalPrice).HasPrecision(18, 2);
+                entity.Property(e => e.DiscountAmount).HasPrecision(18, 2);
+                entity.Property(e => e.TaxAmount).HasPrecision(18, 2);
+                entity.Property(e => e.TotalAmount).HasPrecision(18, 2);
+
+
+                entity.HasOne(i => i.Payment)
+                  .WithOne(p => p.Invoice) // Use singular 'Invoice' if Payment points to one Invoice
+                  .HasForeignKey<Invoices>(i => i.PaymentID)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+                // 1-to-Many Relationship with Offer
+                entity.HasOne(i => i.Offer)
+                    .WithMany(o => o.Invoices)
+                    .HasForeignKey(i => i.GeneralOfferID)
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // Non-negative CHECK Constraints
+                entity.ToTable(t =>
+                {
+                    t.HasCheckConstraint("CK_Invoices_OriginalPrice", "[OriginalPrice] >= 0");
+                    t.HasCheckConstraint("CK_Invoices_DiscountAmount", "[DiscountAmount] >= 0");
+                    t.HasCheckConstraint("CK_Invoices_TaxAmount", "[TaxAmount] >= 0");
+                    t.HasCheckConstraint("CK_Invoices_TotalAmount", "[TotalAmount] >= 0");
+                });
+            });
+
 
         }
     }

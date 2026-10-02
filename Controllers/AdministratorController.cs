@@ -36,9 +36,9 @@ namespace StudyHubAPI.Controllers
                 return result.Type switch
                 {
 
-                    ResultType.NotFound => NotFound(new { error = result.ErrorMessage }),
-                    ResultType.Conflict => Conflict(new { error = result.ErrorMessage }),
-                    _ => BadRequest(new { error = result.ErrorMessage })
+                    ResultType.NotFound => NotFound(new { Error = result.ErrorMessage }),
+                    ResultType.Conflict => Conflict(new { Error = result.ErrorMessage }),
+                    _ => BadRequest(new { Error = result.ErrorMessage })
                 };
             }
 

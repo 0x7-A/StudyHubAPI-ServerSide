@@ -37,8 +37,7 @@ namespace StudyHubAPI.Services
                 ReservationID = dto.ReservationID,
                 PaymentStatus = PaymentStatus.Pending,
                 PaymentReason = dto.PaymentReason,
-                PaymentDate = DateTime.Now,
-                TotalPrice = price
+                PaymentDate = DateTime.Now
             };
         }
 

@@ -159,6 +159,8 @@ builder.Services.AddScoped<PaymentRepository>();
 builder.Services.AddScoped<WorkspaceImagesRepository>();
 builder.Services.AddScoped<LoginInfoRepository>();
 builder.Services.AddScoped<CountryRepository>();
+builder.Services.AddScoped<DamagesRepository>();
+builder.Services.AddScoped<OfferRepository>();
 
 
 // =========================================================
@@ -174,6 +176,8 @@ builder.Services.AddScoped<PaymentService>();
 builder.Services.AddScoped<WorkspaceImagesService>();
 builder.Services.AddScoped<LoginInfoService>();
 builder.Services.AddScoped<CountryService>();
+builder.Services.AddScoped<DamagesService>();
+builder.Services.AddScoped<OfferService>();
 
 
 builder.Services.AddCors(options =>

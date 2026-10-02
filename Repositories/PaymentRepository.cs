@@ -26,7 +26,7 @@ namespace StudyHubAPI.Repositories
         {
             return await _Context.Payments.AsNoTracking().Select(p => new PaymentDetialsDto { PaymentID = p.PaymentID,
                 AdminID = p.AdminID, CustomerID = p.CustomerID,ReservationID = p.ReservationID, PaymentDate = p.PaymentDate,
-                PaymentMethod = p.PaymentMethod, PaymentReason = p.PaymentReason, PaymentStatus = p.PaymentStatus, TotalPrice = p.TotalPrice } )
+                PaymentMethod = p.PaymentMethod, PaymentReason = p.PaymentReason, PaymentStatus = p.PaymentStatus } )
                 .FirstOrDefaultAsync();
         }
 
@@ -53,8 +53,7 @@ namespace StudyHubAPI.Repositories
                     PaymentDate = p.PaymentDate,
                     PaymentMethod = p.PaymentMethod,
                     PaymentReason = p.PaymentReason,
-                    PaymentStatus = p.PaymentStatus,
-                    TotalPrice = p.TotalPrice
+                    PaymentStatus = p.PaymentStatus
                 }).ToListAsync();
         }
 

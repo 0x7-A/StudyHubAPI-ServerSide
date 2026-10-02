@@ -1,5 +1,6 @@
 ﻿using StudyHubAPI.Models.Entities;
 using StudyHubAPI.Models.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace StudyHubAPI.Models.DTOs.Payment
 {
@@ -9,8 +10,8 @@ namespace StudyHubAPI.Models.DTOs.Payment
         public int CustomerID { get; set; }
         public int AdminID { get; set; }
         public int ReservationID { get; set; }
-        public decimal TotalPrice { get; set; }
         public PaymentStatus PaymentStatus { get; set; }
+
         public PaymentReason PaymentReason { get; set; }
         public string PaymentMethod { get; set; } = null!;
         public DateTime PaymentDate { get; set; }
