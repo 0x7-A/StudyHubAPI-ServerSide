@@ -7,6 +7,6 @@ namespace StudyHubAPI.Models.DTOs.Payment
     {
         [EnumDataType(typeof(PaymentStatus))]
         public PaymentStatus PaymentStatus { get; set; }
-        public string PaymentMethod { get; set; } = null!;
+        public string? PaymentMethod { get; set; }
     }
 }

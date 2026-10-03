@@ -22,9 +22,9 @@ namespace StudyHubAPI.Repositories
         }
 
 
-        public async Task<ReservationDetails?> GetReservationByIDDTO(int ReservationID)
+        public async Task<ReservationDetailsDto?> GetReservationByIDDTO(int ReservationID)
         {
-            return await _context.Reservations.Select(r => new ReservationDetails
+            return await _context.Reservations.Select(r => new ReservationDetailsDto
             {
                 ReservationID = r.ReservationID,
                 WorkspaceID = r.WorkspaceID,
@@ -92,12 +92,12 @@ namespace StudyHubAPI.Repositories
 
         public async Task<bool> IsWorkspaceAvailable(int WorkspaceID, DateTime Startdate, DateTime EndDate)
         {
-            return await _context.Reservations.Where(r => r.WorkspaceID == WorkspaceID
-             && (r.ReservationStatus == ReservationStatus.Confirmed || r.ReservationStatus == ReservationStatus.Pending)
+            return !await _context.Reservations.Where(r => r.WorkspaceID == WorkspaceID 
+            && (r.ReservationStatus != ReservationStatus.Cancelled && r.ReservationStatus != ReservationStatus.Completed)
             && r.StartDate < EndDate
-                    && r.EndDate > Startdate && r.Workspace.WorkspaceStatus == 1
-
-            ).AnyAsync();
+            && r.EndDate > Startdate
+            && r.Workspace.WorkspaceStatus == 1
+             ).AnyAsync();
         }
 
         public async Task<int> AddReservation(Reservations reservation)

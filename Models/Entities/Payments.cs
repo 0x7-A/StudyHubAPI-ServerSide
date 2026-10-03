@@ -8,13 +8,10 @@ namespace StudyHubAPI.Models.Entities
         public int CustomerID { get; set; }
         public int AdminID { get; set; }
         public int ReservationID { get; set; }
-
         public PaymentStatus PaymentStatus { get; set; }
         public PaymentReason PaymentReason { get; set; }
-
-        public string PaymentMethod { get; set; } = null!;
+        public string? PaymentMethod { get; set; }
         public DateTime PaymentDate { get; set; }
-
         public virtual Customers Customer { get; set; } = null!;
         public virtual Administrators Administrator { get; set; } = null!;
         public virtual Reservations Reservation { get; set; } = null!;

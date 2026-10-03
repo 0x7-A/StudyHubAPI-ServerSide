@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using StudyHubAPI.Models.DTOs;
+﻿using StudyHubAPI.Models.DTOs;
+using StudyHubAPI.Models.DTOs.Payment;
 using StudyHubAPI.Models.DTOs.Reservation;
 using StudyHubAPI.Models.Entities;
 using StudyHubAPI.Models.Enums;
@@ -11,17 +11,51 @@ namespace StudyHubAPI.Services
 {
     public class ReservationService
     {
+        private readonly OfferRepository _OfferRepository;
+        private readonly InvoiceRepository _InvoiceRepository;
         private readonly ReservationRepository _reservationRepository;
         private readonly WorkspaceRepository _WorkspaceRepository;
         private readonly PaymentRepository _paymentRepository;
 
         public ReservationService(ReservationRepository reservationRepository,WorkspaceRepository workspaceRepository,
-            PaymentRepository paymentRepository)
+            PaymentRepository paymentRepository, OfferRepository offerRepository, InvoiceRepository invoiceRepository)
         {
             _reservationRepository = reservationRepository;
             _WorkspaceRepository = workspaceRepository;
             _paymentRepository = paymentRepository;
+            _OfferRepository = offerRepository;
+            _InvoiceRepository = invoiceRepository;
         }
+
+        private async Task<int> _AddPayment(int paymentID, decimal price)
+        {
+            var activeOffer = await _OfferRepository.GetActiveOffer();
+            decimal discountAmount = 0;
+            int? offerID = null;
+
+            if (activeOffer != null)
+            {
+                discountAmount = price * activeOffer.OfferPercentage;
+                if(activeOffer.MaximumDiscountAmount.HasValue && discountAmount > activeOffer.MaximumDiscountAmount.Value)
+                {
+                    discountAmount = activeOffer.MaximumDiscountAmount.Value;
+                }
+                offerID = activeOffer.OfferID;
+            }
+
+            decimal taxAmount = SystemSettings.TaxRate * price;
+            // 2. Insert Payment
+            return await _InvoiceRepository.AddInvoice(new Invoices
+            {
+                PaymentID = paymentID,
+                GeneralOfferID = offerID,
+                OriginalPrice = price,
+                TaxAmount = taxAmount,
+                DiscountAmount = discountAmount,
+                TotalAmount = price + taxAmount - discountAmount
+            });  
+        }
+
 
         private async Task<decimal> _GetTotalPrice(int WorkspaceID,DateTime StartDate,DateTime EndDate)
         {
@@ -36,7 +70,7 @@ namespace StudyHubAPI.Services
         }
 
 
-        public Task<ReservationDetails?> GetReservationByID(int ReservationID)
+        public Task<ReservationDetailsDto?> GetReservationByID(int ReservationID)
         {
             return _reservationRepository.GetReservationByIDDTO(ReservationID);
 
@@ -50,9 +84,12 @@ namespace StudyHubAPI.Services
 
         public async Task<ServiceResult<int>>AddReservation(CreateReservationDto dto)
         {
-            if(!await  _paymentRepository.HasUnpaidPayments(dto.CustomerID))
+
+            var payemtsList = await _paymentRepository.GetAllPendingByCustomerID(dto.CustomerID, PaymentStatus.Pending);  
+            if (payemtsList.Count > 0)
             {
-                return ServiceResult<int>.Failure(ResultType.BadRequest, "Customers already have an open paymetns");
+                var paymentIds = string.Join(", ", payemtsList.Select(p => p.PaymentID));
+                return ServiceResult<int>.Failure(ResultType.BadRequest, $"Customers already have an open paymetns {paymentIds}");
             }
 
             if (!await _reservationRepository.IsWorkspaceAvailable(dto.WorkspaceID, dto.StartDate, dto.EndDate))
@@ -60,9 +97,9 @@ namespace StudyHubAPI.Services
                 return ServiceResult<int>.Failure(ResultType.BadRequest, $"Workspace is not available in {dto.StartDate} - {dto.EndDate}");
             }
 
-            if(!await _reservationRepository.HasAwaitingPaymentReservation(dto.CustomerID))
+            if(await _reservationRepository.HasAwaitingPaymentReservation(dto.CustomerID))
             {
-                return ServiceResult<int>.Failure(ResultType.BadRequest, $" ");
+                return ServiceResult<int>.Failure(ResultType.BadRequest, $"has a reservation already");
             }
          
             var totalPrice = await _GetTotalPrice(dto.WorkspaceID, dto.StartDate, dto.EndDate);
@@ -92,8 +129,9 @@ namespace StudyHubAPI.Services
                     PaymentReason = PaymentReason.Basic
                 };
 
-                await _paymentRepository.AddPayment(payment);
-               
+                int newID =  await  _paymentRepository.AddPayment(payment);
+
+                 await _AddPayment(newID, totalPrice);
 
                 await transaction.CommitAsync();
                 return  ServiceResult<int>.Success(reservationID, ResultType.NoContent);
@@ -122,13 +160,18 @@ namespace StudyHubAPI.Services
 
             // [2] is the time passed or not
             var now = DateTime.UtcNow;
-            if (reservation.StartDate > now || reservation.EndDate < now)
+            if (reservation.EndDate < now)
             {
                 return ServiceResult.Failure(ResultType.BadRequest,"Reservation already expired");
             }
 
-            // [3] upate the status
-            if(await _reservationRepository.CheckIn(reservationId, now) > 0)
+            if(reservation.StartDate > now )
+            {
+                return ServiceResult.Failure(ResultType.BadRequest, "Reservation already did not start yet");
+            }
+
+                // [3] upate the status
+                if (await _reservationRepository.CheckIn(reservationId, now) > 0)
             {
                 return ServiceResult.Success(ResultType.NoContent);
             }
@@ -203,22 +246,16 @@ namespace StudyHubAPI.Services
             {
                 return ServiceResult.Failure(ResultType.NotFound, $"No reservation match{reservationId} ");
             }
-
-
             // to-do 
             // policy of returing money back.
-
 
             // mising check if that already pedning 
             // we should cancle payment  
 
-
-            if(reservation.ReservationStatus != ReservationStatus.Confirmed || reservation.ReservationStatus != ReservationStatus.AwaitingPayment)
+            if(reservation.ReservationStatus != ReservationStatus.Confirmed && reservation.ReservationStatus != ReservationStatus.AwaitingPayment)
             {
                 return ServiceResult.Failure(ResultType.BadRequest, "Can't cancle going on payment");
             }
-
-
             //[2] the time is passed and can not cancle 
             //[3] limit
             var now = DateTime.UtcNow;

@@ -76,7 +76,7 @@ namespace StudyHubAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
 
-        public async Task<ActionResult<ReservationDetails>> GetReservationByID(int reservationID)
+        public async Task<ActionResult<ReservationDetailsDto>> GetReservationByID(int reservationID)
         {
             if (reservationID <= 0 )
             {

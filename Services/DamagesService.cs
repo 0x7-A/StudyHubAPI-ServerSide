@@ -1,6 +1,7 @@
 ﻿using StudyHubAPI.Models.DTOs.Damage;
 using StudyHubAPI.Models.DTOs.WorkspaceImages;
 using StudyHubAPI.Models.Entities;
+using StudyHubAPI.Models.Enums;
 using StudyHubAPI.Repositories;
 using StudyHubAPI.Utils;
 
@@ -9,18 +10,34 @@ namespace StudyHubAPI.Services
     public class DamagesService
     {
         private readonly DamagesRepository _damagesRepository;
+
+        private readonly PaymentRepository _paymentRepository;
         private readonly IConfiguration _configuration;
 
 
-        public DamagesService(DamagesRepository damagesRepository, IConfiguration configuration)
+        public DamagesService(DamagesRepository damagesRepository, IConfiguration configuration, PaymentRepository paymentRepository)
         {
             _damagesRepository = damagesRepository;
             _configuration = configuration;
+            _paymentRepository = paymentRepository;
+        }
+
+
+        private async Task<bool> CheckReservationStatus(int paymentId)
+        {
+             var reservation = await _paymentRepository.GetReservationByPaymentId(paymentId);
+             return (reservation != null) && (reservation.ReservationStatus == ReservationStatus.Completed || reservation.ReservationStatus == ReservationStatus.Pending);
         }
 
 
         public async Task<ServiceResult<int>> AddDamagedRecord(CreateDamageDto dto)
         {
+
+            if (!await CheckReservationStatus(dto.PaymentId))
+            {
+                return ServiceResult<int>.Failure(ResultType.BadRequest, "Cannot add damage record for a reservation that is not completed or pending.");
+            }
+
 
             string? fullFilePath = null;
 
@@ -34,12 +51,6 @@ namespace StudyHubAPI.Services
 
                 var ext = Path.GetExtension(dto.File.FileName).ToLowerInvariant();
 
-
-                if (await ImageValidator.IsValidImageAsync(dto.File))
-                {
-                    return ServiceResult<int>.Failure(ResultType.BadRequest, "Invalid image file.");
-                }
-
                 var fileName = $"{Guid.NewGuid()}{ext}";
 
                 var folderPath = _configuration["FileStorage:WorkspaceImagesPath"] ?? "C:\\WorkspaceImages";
@@ -52,7 +63,6 @@ namespace StudyHubAPI.Services
                     await dto.File.CopyToAsync(stream);
                 }
             }
-
 
             var damaged = new Damage
             {

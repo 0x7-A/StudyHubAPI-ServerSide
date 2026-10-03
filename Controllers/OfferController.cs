@@ -1,13 +1,13 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using StudyHubAPI.Models.DTOs.Admin;
 using StudyHubAPI.Models.DTOs.Offer;
 using StudyHubAPI.Services;
 using StudyHubAPI.Utils;
 
 namespace StudyHubAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Authorize(Roles = "Admin")]
+    [Route("api/Offer")]
     [ApiController]
     public class OfferController : ControllerBase
     {

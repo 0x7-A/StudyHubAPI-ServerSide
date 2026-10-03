@@ -270,8 +270,7 @@ namespace StudyHubAPI.Data
                       .IsRequired();
 
                 entity.Property(e => e.PaymentMethod)
-                      .IsRequired()
-                      .HasMaxLength(50);
+                  .HasMaxLength(50).IsRequired(false);
 
                 entity.Property(e => e.PaymentDate)
                       .HasDefaultValueSql("SYSUTCDATETIME()");
@@ -446,14 +445,33 @@ namespace StudyHubAPI.Data
             {
                 entity.HasKey(e => e.OfferID);
 
+                entity.Property(e => e.OfferID)
+                    .ValueGeneratedOnAdd();
+
                 entity.Property(e => e.OfferName)
                     .IsRequired()
                     .HasMaxLength(30);
 
                 entity.Property(e => e.OfferPercentage)
+                    .IsRequired()
                     .HasPrecision(5, 2);
 
-                // Non-negative CHECK Constraints (SQL Server 2019+ / EF Core 7.0+)
+                entity.Property(e => e.StartDate)
+                    .IsRequired()
+                    .HasColumnType("datetime");
+
+
+                entity.Property(e => e.EndDate)
+                    .IsRequired()
+                    .HasColumnType("datetime");
+
+
+                entity.Property(e => e.MaximumDiscountAmount)
+                    .IsRequired(false); 
+
+                entity.Property(e => e.MinimumDiscountAmount)
+                    .IsRequired(false); 
+
                 entity.ToTable(t =>
                 {
                     t.HasCheckConstraint("CK_Offers_OfferPercentage", "[OfferPercentage] >= 0");

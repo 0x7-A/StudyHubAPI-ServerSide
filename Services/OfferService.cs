@@ -20,7 +20,13 @@ namespace StudyHubAPI.Services
             {
                 return ServiceResult<int>.Failure(ResultType.BadRequest, "Maximum discount amount cannot be less than minimum discount amount.");
             }
-            if(newOffer.StartDate < DateTime.UtcNow.AddMinutes(-2))
+
+            if(newOffer.StartDate >= newOffer.EndDate)
+            {
+                return ServiceResult<int>.Failure(ResultType.BadRequest, "Start date must be before end date.");
+            }
+
+            if (newOffer.StartDate < DateTime.UtcNow.AddMinutes(-2))
             {
                 return ServiceResult<int>.Failure(ResultType.BadRequest, "Start date cannot be in the past.");
             }
@@ -28,7 +34,7 @@ namespace StudyHubAPI.Services
             {
                 return ServiceResult<int>.Failure(ResultType.BadRequest, "End date cannot be in the past.");
             }
-            if (await _offerRepository.IsThereAnActiveOffer())
+            if (await _offerRepository.IsThereAnActiveOffer(newOffer.StartDate, newOffer.EndDate))
             {
                 return ServiceResult<int>.Failure(ResultType.Conflict, "There is already an active offer.");
             }

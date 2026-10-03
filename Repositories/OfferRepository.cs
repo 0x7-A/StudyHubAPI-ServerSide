@@ -60,9 +60,22 @@ namespace StudyHubAPI.Repositories
         }
 
 
-        public async Task<bool> IsThereAnActiveOffer()
+        public async Task<bool> IsThereAnActiveOffer(DateTime start, DateTime end)
         {
-            return await _context.Offers.AnyAsync(o => o.StartDate <= DateTime.UtcNow && o.EndDate >= DateTime.UtcNow);
+            return await _context.Offers.AnyAsync(o => o.StartDate <= end && o.EndDate >= start);
+        }
+
+        public async Task<OfferSummaryDto?> GetActiveOffer()
+        {
+            var now = DateTime.UtcNow;
+
+            return await _context.Offers.Where(o => o.StartDate <= now && o.EndDate >= now).Select(o => new OfferSummaryDto
+            {
+                OfferID = o.OfferID,
+                OfferPercentage = o.OfferPercentage,
+                MaximumDiscountAmount = o.MaximumDiscountAmount,
+                MinimumDiscountAmount = o.MinimumDiscountAmount
+            }).AsNoTracking().FirstOrDefaultAsync();
         }
 
     }
