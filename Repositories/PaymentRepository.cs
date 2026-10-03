@@ -24,9 +24,9 @@ namespace StudyHubAPI.Repositories
 
         public async Task<PaymentDetialsDto?> GetPaymntByIDDto(int id)
         {
-            return await _Context.Payments.AsNoTracking().Select(p => new PaymentDetialsDto { PaymentID = p.PaymentID,
+            return await _Context.Payments.AsNoTracking().Where(p => p.PaymentID == id).Select(p => new PaymentDetialsDto { PaymentID = p.PaymentID,
                 AdminID = p.AdminID, CustomerID = p.CustomerID,ReservationID = p.ReservationID, PaymentDate = p.PaymentDate,
-                PaymentMethod = p.PaymentMethod, PaymentReason = p.PaymentReason, PaymentStatus = p.PaymentStatus } )
+                PaymentMethod = p.PaymentMethod, PaymentReason = p.PaymentReason, PaymentStatus = p.PaymentStatus })
                 .FirstOrDefaultAsync();
         }
 
@@ -37,9 +37,9 @@ namespace StudyHubAPI.Repositories
             return  payment.PaymentID;
         }
 
-        public async Task<bool> HasUnpaidPayments(int customerID)
+        public async Task<List<int>> HasUnpaidPayments(int customerID)
         {
-            return await _Context.Payments.AnyAsync(p => p.CustomerID == customerID && p.PaymentStatus == PaymentStatus.Pending);
+            return await _Context.Payments.Where(p => p.CustomerID == customerID && p.PaymentStatus == PaymentStatus.Pending).Select(p => p.PaymentID).ToListAsync();
         }
 
         public async Task<List<PaymentDetialsDto>> GetAllPendingByCustomerID(int CustomerID,PaymentStatus status)
@@ -68,6 +68,10 @@ namespace StudyHubAPI.Repositories
         }
 
 
+       public async Task<Reservations?> GetReservationByPaymentId(int paymentId)
+       {
+            return await _Context.Payments.Where(r => r.PaymentID == paymentId).Select(p => p.Reservation).FirstOrDefaultAsync();
+       }
 
     }
 }

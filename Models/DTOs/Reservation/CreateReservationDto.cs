@@ -19,9 +19,5 @@ namespace StudyHubAPI.Models.DTOs.Reservation
 
         [Required]
         public DateTime EndDate { get; set; }
-
-        [EnumDataType(typeof(ReservationStatus))]
-        public ReservationStatus ReservationStatus { get; set; }
-
     }
 }

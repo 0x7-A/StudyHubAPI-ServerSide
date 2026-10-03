@@ -1,10 +1,8 @@
-﻿using StudyHubAPI.Repositories;
-using StudyHubAPI.Models.DTOs.Payment;
+﻿using StudyHubAPI.Models.DTOs.Payment;
 using StudyHubAPI.Models.Entities;
 using StudyHubAPI.Models.Enums;
+using StudyHubAPI.Repositories;
 using StudyHubAPI.Utils;
-using Microsoft.Identity.Client;
-using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace StudyHubAPI.Services
 {
@@ -20,12 +18,18 @@ namespace StudyHubAPI.Services
         private readonly PaymentRepository _PaymentRepository;
         private readonly ReservationRepository _ReservationRepository;
         private readonly WorkspaceRepository _WorkspaceRepository;
+        private readonly InvoiceRepository _InvoiceRepository;
+        private readonly OfferRepository _OfferRepository;
+
         public PaymentService(PaymentRepository paymentRepository,
-            ReservationRepository reservationRepository, WorkspaceRepository workspaceRepository)
+            ReservationRepository reservationRepository, WorkspaceRepository workspaceRepository,
+            OfferRepository offerRepository, InvoiceRepository invoiceRepository)
         {
           _PaymentRepository = paymentRepository;
           _ReservationRepository = reservationRepository;
           _WorkspaceRepository = workspaceRepository;
+          _OfferRepository = offerRepository;
+          _InvoiceRepository = invoiceRepository;
         }
 
         private Payments GetPaymentObj(CreatePaymentDto dto, decimal price)
@@ -106,6 +110,61 @@ namespace StudyHubAPI.Services
             return -1;
         }
 
+        public async Task<ServiceResult<int>> _AddPayment(CreatePaymentDto dto, Reservations Reservation)
+        {
+            decimal price = await _GetPrice(dto.ReservationID, Reservation, dto.PaymentReason);
+
+            if (price == -1)
+            {
+                return ServiceResult<int>.Failure(ResultType.Failure, "Failed to calculate payment amount");
+            }
+
+            var activeOffer = await _OfferRepository.GetActiveOffer();
+            decimal discountAmount = 0;
+            int? offerID = null;
+
+            if (activeOffer != null)
+            {
+                discountAmount = price * activeOffer.OfferPercentage;
+                offerID = activeOffer.OfferID;
+            }
+
+            decimal taxAmount = SystemSettings.TaxRate * price;
+
+            // 1. Begin the Database Transaction via DbContext (or via Unit of Work / Repository DbContext)
+            await using var transaction = await  _PaymentRepository.BeginTransactionAsync();
+
+            try
+            {
+                // 2. Insert Payment
+                var newPaymentID = await _PaymentRepository.AddPayment(GetPaymentObj(dto, price));
+
+                // 3. Insert Invoice using the new Payment ID
+                int invoiceID = await _InvoiceRepository.AddInvoice(new Invoices
+                {
+                    PaymentID = newPaymentID,
+                    GeneralOfferID = offerID,
+                    OriginalPrice = price,
+                    TaxAmount = taxAmount,
+                    DiscountAmount = discountAmount,
+                    TotalAmount = price + taxAmount - discountAmount
+                });
+
+                // 4. Commit all changes atomically
+                await transaction.CommitAsync();
+
+                return ServiceResult<int>.Success(newPaymentID);
+            }
+            catch (Exception ex)
+            {
+                // 5. Rollback on failure to prevent orphaned Payments without Invoices
+                await transaction.RollbackAsync();
+
+                // Log exception here (e.g., _logger.LogError(ex, "..."))
+                return ServiceResult<int>.Failure(ResultType.Failure, "An error occurred while processing the payment and invoice.");
+            }
+        }
+
 
         public  async Task<ServiceResult<PaymentDetialsDto?>> GetPaymentByID(int ID)
         {
@@ -124,6 +183,11 @@ namespace StudyHubAPI.Services
             // initalliay with payment staus = pending after calcukating the price and
             // adding the payment. 
 
+            if(dto.PaymentReason == PaymentReason.Basic)
+            {
+                return ServiceResult<int>.Failure(ResultType.BadRequest, "Cannot add basic payment through this endpoint");
+            }
+
             var Reservation = await _ReservationRepository.GetReservationByIDUnTracked(dto.ReservationID);
             if (Reservation == null)
             {
@@ -141,17 +205,7 @@ namespace StudyHubAPI.Services
                 return ServiceResult<int>.Failure(ResultType.BadRequest, "Cannot add fine for this reservation, since it is not pending or completed");
             }
 
-
-
-
-           decimal price = await _GetPrice(dto.ReservationID, Reservation, dto.PaymentReason);
-
-           if (price == -1)
-           {
-                return ServiceResult<int>.Failure(ResultType.Failure, "Failed to calculate payment amount");
-           }
-
-            return ServiceResult<int>.Success(await _PaymentRepository.AddPayment(GetPaymentObj(dto, price)));
+             return await _AddPayment(dto, Reservation);
         }
 
       
@@ -211,7 +265,6 @@ namespace StudyHubAPI.Services
         public Task<List<PaymentDetialsDto>> GetAllPendingPaymentByCustomerID(int CustomerID)
         {
             return _PaymentRepository.GetAllPendingByCustomerID(CustomerID, PaymentStatus.Pending);
-
         }
 
     }

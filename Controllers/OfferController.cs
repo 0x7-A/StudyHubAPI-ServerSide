@@ -1,13 +1,13 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using StudyHubAPI.Models.DTOs.Admin;
 using StudyHubAPI.Models.DTOs.Offer;
 using StudyHubAPI.Services;
 using StudyHubAPI.Utils;
 
 namespace StudyHubAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Authorize(Roles = "Admin")]
+    [Route("api/Offer")]
     [ApiController]
     public class OfferController : ControllerBase
     {
@@ -67,7 +67,7 @@ namespace StudyHubAPI.Controllers
 
 
 
-        [HttpGet("GetAll", Name = "GetAllOffers")]
+        [HttpGet("All", Name = "GetAllOffers")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]

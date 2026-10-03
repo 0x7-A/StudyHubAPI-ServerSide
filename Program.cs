@@ -9,7 +9,6 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
-using StudyHubAPI.Models.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,8 +18,7 @@ string? apiToken = Environment.GetEnvironmentVariable("MY_API_TOKEN");
 if (string.IsNullOrWhiteSpace(apiToken))
 {
     throw new InvalidOperationException(
-        "CRITICAL STARTUP ERROR: The environment variable 'MY_API_TOKEN' is missing or empty. " +
-        "Please set it on your machine and restart your IDE.");
+        "CRITICAL STARTUP ERROR: The environment variable 'MY_API_TOKEN' is missing or empty.Please set it on your machine and restart your IDE.");
 }
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -161,6 +159,7 @@ builder.Services.AddScoped<LoginInfoRepository>();
 builder.Services.AddScoped<CountryRepository>();
 builder.Services.AddScoped<DamagesRepository>();
 builder.Services.AddScoped<OfferRepository>();
+builder.Services.AddScoped<InvoiceRepository>();
 
 
 // =========================================================
@@ -178,6 +177,7 @@ builder.Services.AddScoped<LoginInfoService>();
 builder.Services.AddScoped<CountryService>();
 builder.Services.AddScoped<DamagesService>();
 builder.Services.AddScoped<OfferService>();
+builder.Services.AddScoped<InvoiceService>();
 
 
 builder.Services.AddCors(options =>

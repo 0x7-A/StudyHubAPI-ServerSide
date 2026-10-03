@@ -110,7 +110,7 @@ namespace StudyHubAPI.Controllers
         }
 
 
-        [HttpGet("GetAllPendingPayment{Id:int}", Name = "GetAllPendingPayment")]
+        [HttpGet("GetAllPendingPayment{CustomerID:int}", Name = "GetAllPendingPayment")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -124,7 +124,7 @@ namespace StudyHubAPI.Controllers
 
             var PaymentList = await _paymentService.GetAllPendingPaymentByCustomerID(CustomerID);
 
-            if (PaymentList == null)
+            if (PaymentList.Count == 0)
             {
                 return NotFound();
             }
